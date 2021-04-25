@@ -1,6 +1,6 @@
-const Db = require("../services/dotaBot").Db;
-const lobbyManager = require("../services/dotaBot").lobbyManager;
-const CONSTANTS = require("../services/dotaBot").CONSTANTS;
+const Db = require("../../../services/dotaBot").Db;
+const lobbyManager = require("../../../services/dotaBot").lobbyManager;
+const CONSTANTS = require("../../../services/dotaBot").CONSTANTS;
 var Services = require("../../../services/network");
 
 const _createsteamlobby = async (req, res, next) => {
@@ -23,9 +23,14 @@ const _createsteamlobby = async (req, res, next) => {
     }
 
     if ((lobbyState.players.length = 2)) {
-      Db.updateLobbyState(lobbyState, CONSTANTS.STATE_WAITING_FOR_BOT);
+      lobbyState.state = CONSTANTS.STATE_WAITING_FOR_BOT;
+      Db.updateLobby(lobbyState);
 
-      lobbyManager.runLobby(lobbyState, [CONSTANTS.STATE_WAITING_FOR_BOT]);
+      // lobbyManager.runLobby(lobbyState, [CONSTANTS.STATE_WAITING_FOR_BOT]);
+        await lobbyManager[CONSTANTS.EVENT_RUN_LOBBY](lobbyState,[
+          CONSTANTS.STATE_WAITING_FOR_BOT,
+        ]);
+
 
       return Services._response(
         res,

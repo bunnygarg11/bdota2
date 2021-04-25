@@ -191,7 +191,7 @@ const processMembers = (oldMembers = [], newMembers = []) => {
 };
 
 const invitePlayer = (dotaBot) => async (user) =>
-  dotaBot.inviteToLobby(user.steamId64);
+  dotaBot.inviteToLobby(user);
 
 const kickPlayer = (dotaBot) => async (user) =>
   dotaBot.practiceLobbyKick(parseInt(convertor.to32(user.steamId64)));

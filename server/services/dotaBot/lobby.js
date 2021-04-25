@@ -20,7 +20,7 @@ const getLobby = (lobbyOrState) => {
   //     cache.Lobbies.set(lobby.id, lobby);
   //     return lobby;
   //   }
-  return Db.findLobbyById(lobbyOrState.id);
+  return Db.findLobbyById(lobbyOrState._id);
 };
 
 const getPlayers = (lobbyOrState) => Db.getLobbyPlayers(lobbyOrState);
@@ -36,7 +36,7 @@ const removePlayer = async (lobbyOrState, user) =>
 
 const unassignBotFromLobby = async (lobbyState) => {
   if (lobbyState.botId) {
-    await Db.unassignBotFromLobby(lobbyState)(lobbyState.botId);
+    await Db.unassignBotFromLobby(lobbyState,lobbyState.botId);
   }
   return { ...lobbyState, botId: null, dotaLobbyId: null };
 };
@@ -84,7 +84,7 @@ const validateLobbyPlayers = async (_lobbyState) => {
       lobbyState = await checkPlayers(_lobbyState);
       if (lobbyState.state === CONSTANTS.STATE_FAILED) {
         logger.silly(
-          `validateLobbyPlayers ${lobbyState.id} failed, returning players to queue`
+          `validateLobbyPlayers ${lobbyState._id} failed, returning players to queue`
         );
         lobbyState.state = CONSTANTS.STATE_WAITING_FOR_QUEUE;
         await Db.updateLobby(lobbyState);
@@ -97,7 +97,7 @@ const validateLobbyPlayers = async (_lobbyState) => {
       lobbyState = await checkPlayers(_lobbyState);
       if (lobbyState.state === CONSTANTS.STATE_FAILED) {
         logger.silly(
-          `validateLobbyPlayers ${lobbyState.id} failed, returning players to queue`
+          `validateLobbyPlayers ${lobbyState._id} failed, returning players to queue`
         );
         // await returnPlayersToQueue(lobbyState);
         lobbyState.state = CONSTANTS.STATE_WAITING_FOR_QUEUE;
@@ -110,19 +110,19 @@ const validateLobbyPlayers = async (_lobbyState) => {
     // falls through
     default:
       logger.silly(
-        `validateLobbyPlayers ${_lobbyState.id} default ${_lobbyState.state}`
+        `validateLobbyPlayers ${_lobbyState._id} default ${_lobbyState.state}`
       );
       return { ..._lobbyState };
   }
   logger.silly(
-    `validateLobbyPlayers ${lobbyState.id} end ${_lobbyState.state} to ${lobbyState.state}`
+    `validateLobbyPlayers ${lobbyState._id} end ${_lobbyState.state} to ${lobbyState.state}`
   );
   return lobbyState;
 };
 
 const assignLobbyName = async (lobbyState) => {
   let lobbyName = templateString("Inhouse Lobby ${lobbyId}")({
-    lobbyId: lobbyState.id,
+    lobbyId: lobbyState._id,
   });
   lobbyName = lobbyName
     .toLowerCase()
@@ -138,7 +138,7 @@ const resetLobbyState = async (_lobbyState) => {
       if (!lobbyState.leagueid) {
         lobbyState.state = CONSTANTS.STATE_MATCH_NO_STATS;
         logger.silly(
-          `resetLobbyState ${_lobbyState.id} ${_lobbyState.state} to ${lobbyState.state}`
+          `resetLobbyState ${_lobbyState._id} ${_lobbyState.state} to ${lobbyState.state}`
         );
         break;
       }
@@ -148,13 +148,13 @@ const resetLobbyState = async (_lobbyState) => {
     case CONSTANTS.STATE_BOT_STARTED:
       lobbyState.state = CONSTANTS.STATE_WAITING_FOR_BOT;
       logger.silly(
-        `resetLobbyState ${_lobbyState.id} ${_lobbyState.state} to ${lobbyState.state}`
+        `resetLobbyState ${_lobbyState._id} ${_lobbyState.state} to ${lobbyState.state}`
       );
       break;
     case CONSTANTS.STATE_CHECKING_READY:
       lobbyState.state = CONSTANTS.STATE_BEGIN_READY;
       logger.silly(
-        `resetLobbyState ${_lobbyState.id} ${_lobbyState.state} to ${lobbyState.state}`
+        `resetLobbyState ${_lobbyState._id} ${_lobbyState.state} to ${lobbyState.state}`
       );
       break;
     default:
