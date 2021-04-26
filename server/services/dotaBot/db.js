@@ -335,20 +335,11 @@ module.exports.unassignBotFromLobby = async (lobby, botId) => {
     throw err.message;
   }
 };
-// db.sequelize.transaction(async (t) => {
-//   await db.Lobby.update(
-//     { botId: null, dotaLobbyId: null },
-//     { where: { id: lobby.id }, transaction: t }
-//   );
-//   cache.Lobbies.delete(lobby.id);
-//   await db.Bot.increment(
-//     { lobbyCount: -1 },
-//     { where: { id: botId }, transaction: t }
-//   );
-// });
+
+
+
 
 module.exports.updateLobbyState = async (lobbyOrState, state) => {
-  // const result = await db.Lobby.update({ state }, { where: { id: lobbyOrState.id } });
   try {
     const result = await dotaLobbyModel.findOneAndUpdate(
       {
@@ -371,7 +362,6 @@ module.exports.updateLobbyState = async (lobbyOrState, state) => {
 };
 
 module.exports.updateLobbyName = async (lobbyOrState, lobbyName) => {
-  // const result = await db.Lobby.update({ state }, { where: { id: lobbyOrState.id } });
   try {
     const result = await dotaLobbyModel.findOneAndUpdate(
       {
@@ -394,7 +384,6 @@ module.exports.updateLobbyName = async (lobbyOrState, lobbyName) => {
 };
 
 module.exports.updateLobbyChannel = async (lobbyOrState, channel) => {
-  // const result = await db.Lobby.update({ state }, { where: { id: lobbyOrState.id } });
   try {
     const result = await dotaLobbyModel.findOneAndUpdate(
       {
@@ -417,7 +406,6 @@ module.exports.updateLobbyChannel = async (lobbyOrState, channel) => {
 };
 
 module.exports.updateLobbyState = async (lobbyOrState, state) => {
-  // const result = await db.Lobby.update({ state }, { where: { id: lobbyOrState.id } });
   try {
     const result = await dotaLobbyModel.findOneAndUpdate(
       {
@@ -440,7 +428,6 @@ module.exports.updateLobbyState = async (lobbyOrState, state) => {
 };
 
 module.exports.updateLobbyWinner = async (lobbyOrState, winner) => {
-  // const result = await db.Lobby.update({ winner }, { where: { id: lobbyOrState.id } });
   try {
     const result = await dotaLobbyModel.findOneAndUpdate(
       {
@@ -463,7 +450,6 @@ module.exports.updateLobbyWinner = async (lobbyOrState, winner) => {
 };
 
 module.exports.updateLobby = async (lobbyOrState) => {
-  // const result = await db.Lobby.update({ winner }, { where: { id: lobbyOrState.id } });
   try {
     const result = await dotaLobbyModel.findOneAndUpdate(
       {
@@ -486,7 +472,6 @@ module.exports.updateLobby = async (lobbyOrState) => {
 };
 
 module.exports.updateLobbyFailed = async (lobbyOrState, failReason) => {
-  // const result = await db.Lobby.update({ winner }, { where: { id: lobbyOrState.id } });
   try {
     const result = await dotaLobbyModel.findOneAndUpdate(
       {

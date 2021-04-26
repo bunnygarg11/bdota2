@@ -112,7 +112,7 @@ const setMatchDetails = async (lobbyOrState) => {
       await Db.updateLobby({
         odotaData,
         finishedAt: odotaData.start_time + odotaData.duration * 1000,
-        id: lobby.id,
+        _id: lobby._id,
       });
     }
   }
@@ -155,7 +155,7 @@ const setMatchPlayerDetails = async (_lobby) => {
     }
   }
   await Fp.allPromise(tasks);
-  await Db.updateLobbyWinner(lobby)(winner);
+  await Db.updateLobbyWinner(lobby,winner);
 };
 
 const createMatchEndMessageEmbed = async (matchId) => {

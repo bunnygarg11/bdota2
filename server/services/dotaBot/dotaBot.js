@@ -239,8 +239,8 @@ const createDotaBotLobby = ({
     // );
 
     await Db.updateBotStatusBySteamId(
-       dotaBot.steamId64 ,
-       CONSTANTS.BOT_IN_LOBBY
+      CONSTANTS.BOT_IN_LOBBY,
+       dotaBot.steamId64 
     );
 
     logger.silly("DotaBot createDotaBotLobby bot status updated");
@@ -252,8 +252,8 @@ const createDotaBotLobby = ({
   //   await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IDLE)(dotaBot.steamId64);
 
   await Db.updateBotStatusBySteamId(
-    { steamId64: dotaBot.steamId64 },
-    { status: CONSTANTS.BOT_IDLE }
+    CONSTANTS.BOT_IDLE ,
+     dotaBot.steamId64 
   );
   await dotaBot.leavePracticeLobby();
   await dotaBot.leaveLobbyChat();
@@ -302,8 +302,8 @@ const joinDotaBotLobby = ({
   //   await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IDLE)(dotaBot.steamId64);
 
   await Db.updateBotStatusBySteamId(
-    { steamId64: dotaBot.steamId64 },
-    { status: CONSTANTS.BOT_IDLE }
+     CONSTANTS.BOT_IDLE ,
+     dotaBot.steamId64 ,
   );
   await dotaBot.leavePracticeLobby();
   await dotaBot.leaveLobbyChat();
@@ -420,7 +420,7 @@ class DotaBot extends EventEmitter {
 
       // bot should leave lobby if it does not belong to a valid lobby state
       const dotaLobbyId = lobby.lobby_id.toString();
-      Db.findLobbyByDotaLobbyId({ dotaLobbyId }).then((lobbyState) => {
+      Db.findLobbyByDotaLobbyId( dotaLobbyId ).then((lobbyState) => {
         if (!lobbyState) {
           logger.silly(
             `DotaBot practiceLobbyUpdate lobbyState.dotaLobbyId ${dotaLobbyId} not found. Bot ${this.config.id} leaving lobby...`

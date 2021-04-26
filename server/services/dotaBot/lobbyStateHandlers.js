@@ -241,13 +241,12 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
          let accountName=process.env.accountName
          let personaName=process.env.personaName
          let password=process.env.password
-         let steam_guard_code=process.env.steam_guard_code
+        //  let steam_guard_code=process.env.steam_guard_code
         bot = await Db.findOrCreateBot(
           steamId64,
           accountName,
           personaName,
           password,
-          steam_guard_code
         ); 
       }
 
