@@ -1,7 +1,6 @@
 var dotaBotModel = require("../../models/dotaBot.model");
 var dotaLobbyModel = require("../../models/dotaLobby.model");
 var dotaLobbyPlayerModel = require("../../models/dotaLobbyPlayer.model");
-const response = require("../../core/response");
 const logger = require("../../util/log");
 const CONSTANTS = require("./constants");
 
@@ -574,3 +573,12 @@ module.exports.removePlayer = async (lobbyOrState, player) => {
     throw err.message;
   }
 };
+
+module.exports.findOrCreateLobbyPlayer=async(lobbyPlayer)=>{
+try {
+  return await dotaLobbyPlayerModel.create(lobbyPlayer);
+} catch (err) {
+  logger.error(err);
+  throw err.message;
+}
+}

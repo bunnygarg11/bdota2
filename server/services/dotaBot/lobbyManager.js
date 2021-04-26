@@ -437,13 +437,13 @@ class LobbyManager extends EventEmitter {
    */
   async onMatchStats(lobby) {
     logger.silly(`ihlManager onMatchStats ${lobby._id}`);
-    const league = await Db.findLeagueById(lobby.leagueId);
-    const inhouseState = await Ihl.createInhouseState({
-      league,
-      guild: this.client.guilds.get(league.guildId),
-    });
-    const lobbyState = await Lobby.lobbyToLobbyState(inhouseState)(lobby);
-    this[CONSTANTS.MSG_MATCH_STATS](lobbyState, inhouseState);
+    // const league = await Db.findLeagueById(lobby.leagueId);
+    // const inhouseState = await Ihl.createInhouseState({
+    //   league,
+    //   guild: this.client.guilds.get(league.guildId),
+    // });
+    // const lobbyState = await Lobby.lobbyToLobbyState(inhouseState)(lobby);
+    // this[CONSTANTS.MSG_MATCH_STATS](lobbyState, inhouseState);
     await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_MATCH_STATS);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_MATCH_STATS,

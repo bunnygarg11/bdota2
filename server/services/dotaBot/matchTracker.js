@@ -1,7 +1,7 @@
 
 
 const { EventEmitter } = require("events");
-const got = require("got");
+const getBymatchId = require("../dotaApi").getBymatchId;
 const convertor = require("steam-id-convertor");
 const heroes = require("dotaconstants/build/heroes.json");
 const logger = require("./logger");
@@ -9,7 +9,6 @@ const CONSTANTS = require("./constants");
 const Lobby = require("./lobby");
 const Db = require("./db");
 const Fp = require("./util/fp");
-const cache = require("./cache");
 
 const calcEloChange = (r1, r2, K, S) => {
   const E = 1 / (1 + 10 ** ((r2 - r1) / 400));
@@ -73,32 +72,20 @@ Gold: ${data.total_gold} (${data.gold_per_min}/min)`;
 const getOpenDotaMatchDetails = async (matchId) => {
   logger.silly(`matchTracker getOpenDotaMatchDetails ${matchId}`);
   try {
-    const response = await got(
-      `https://api.opendota.com/api/matches/${matchId}`,
-      { json: true }
-    );
-    return response.body && !response.body.error ? response.body : null;
+    // const response = await got(
+    //   `https://api.opendota.com/api/matches/${matchId}`,
+    //   { json: true }
+    // );
+
+    const response = await getBymatchId(matchId); ;
+    return response.match_id ? response : null;
   } catch (e) {
     logger.error(e);
     return null;
   }
 };
 
-const getValveMatchDetails = async (matchId) => {
-  logger.silly(`matchTracker getValveMatchDetails ${matchId}`);
-  try {
-    const response = await got(
-      `http://api.steampowered.com/IDOTA2Match_570/GetMatchDetails/v1/?key=${process.env.STEAM_API_KEY}&match_id=${matchId}`,
-      { json: true }
-    );
-    return response.body && response.body.result && !response.body.result.error
-      ? response.body
-      : null;
-  } catch (e) {
-    logger.error(e);
-    return null;
-  }
-};
+
 
 const setMatchDetails = async (lobbyOrState) => {
   logger.silly(`matchTracker setMatchDetails matchId ${lobbyOrState.matchId}`);
@@ -116,14 +103,14 @@ const setMatchDetails = async (lobbyOrState) => {
       });
     }
   }
-  lobby = await lobby.reload();
-  cache.Lobbies.set(lobby.id, lobby);
+  // lobby = await lobby.reload();
+  // cache.Lobbies.set(lobby.id, lobby);
   return lobby;
 };
 
 const setMatchPlayerDetails = async (_lobby) => {
   const lobby = await Lobby.getLobby(_lobby);
-  const players = await Lobby.getPlayers()(lobby);
+  const players = await Lobby.getPlayers(lobby);
   let winner = 0;
   const tasks = [];
   for (const playerData of lobby.odotaData.players) {
@@ -150,7 +137,7 @@ const setMatchPlayerDetails = async (_lobby) => {
             winner = 2;
           }
         }
-        tasks.push(Lobby.updateLobbyPlayerBySteamId(data)(_lobby)(steamId64));
+        tasks.push(Lobby.updateLobbyPlayerBySteamId(data,_lobby,steamId64));
       }
     }
   }
@@ -366,7 +353,6 @@ module.exports = {
   calcEloChange,
   updatePlayerRatings,
   getOpenDotaMatchDetails,
-  getValveMatchDetails,
   setMatchDetails,
   setMatchPlayerDetails,
   createMatchEndMessageEmbed,

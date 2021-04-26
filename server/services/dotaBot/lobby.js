@@ -174,6 +174,15 @@ const assignGameMode = async (lobbyState) => ({
 });
 
 const addPlayer = (lobbyOrState, player) => Db.addPlayer(lobbyOrState, player);
+const updateLobbyPlayerBySteamId = async(data, lobbyOrState, steamId64) => {
+  // if (lobbyOrState.players.indexOf(steamId64==-1)){return false}
+   return await Db.findOrCreateLobbyPlayer({
+      ...data,
+      lobbyId: lobbyOrState._id,
+      steamId64,
+      lobbyName: lobbyOrState.lobbyName,
+    });
+};
 module.exports = {
   getLobby,
   getPlayers,
