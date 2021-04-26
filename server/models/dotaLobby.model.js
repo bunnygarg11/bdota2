@@ -24,13 +24,13 @@ let dotalobby = new Schema({
   state: {
     // allowNull: false,
     type: String,
-    defaultValue: CONSTANTS.STATE_NEW,
+    defaultValue: "STATE_NEW",
   },
 
   gameMode: {
     // allowNull: false,
     type: String,
-    default: CONSTANTS.DOTA_GAMEMODE_1V1MID,
+    default: "DOTA_GAMEMODE_1V1MID",
   },
 
   matchId: String,

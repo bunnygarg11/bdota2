@@ -1,6 +1,8 @@
+const LobbyManager= require("./lobbyManager");
+let lobbyManager=new LobbyManager()
 module.exports = {
   Db: require("./db"),
-  lobbyManager: new require("./lobbyManager")(),
-  CONSTANTS:require("./constants"),
-  Lobby:require("./lobby")
+  lobbyManager,
+  CONSTANTS: require("./constants"),
+  Lobby: require("./lobby"),
 };

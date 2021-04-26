@@ -3,7 +3,7 @@
  * */
 const dotenv = require("dotenv");
 const fs = require("fs");
-
+const path=require("path")
 if (fs.existsSync(path.resolve(process.cwd(), "./.env"))) {
   dotenv.config(path.resolve(process.cwd(), "./.env"));
 }

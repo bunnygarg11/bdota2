@@ -9,7 +9,7 @@ const MatchTracker = require("./matchTracker");
 const CONSTANTS = require("./constants");
 const Db = require("./db");
 const Lobby = require("./lobby");
-const Ihl = require("./ihl");
+// const Ihl = require("./ihl");
 const Fp = require("./util/fp");
 const equalsLong = require("./util/equalsLong");
 const DotaBot = require("./dotaBot");
@@ -222,9 +222,9 @@ class LobbyManager extends EventEmitter {
       CONSTANTS.STATE_WAITING_FOR_BOT
     );
     logger.silly(`ihlManager onBotAvailable ${lobbies.length}`);
-    const lobbyStates = await Fp.mapPromise(
-      Ihl.loadLobbyState(this.client.guilds)
-    )(lobbies);
+    // const lobbyStates = await Fp.mapPromise(
+    //   Ihl.loadLobbyState(this.client.guilds)
+    // )(lobbies);
     lobbyStates.forEach((lobbyState) =>
       this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
         CONSTANTS.STATE_WAITING_FOR_BOT,
@@ -383,9 +383,11 @@ class LobbyManager extends EventEmitter {
    * @param {number} matchId - A dota match id.
    */
   async onMatchSignedOut(matchId) {
-    const lobbyState = await Ihl.loadLobbyStateFromMatchId(this.client.guilds)(
-      matchId.toString()
-    );
+    // const lobbyState = await Ihl.loadLobbyStateFromMatchId(this.client.guilds)(
+    //   matchId.toString()
+    // );
+    const lobbyState = await Db.findLobbyByMatchId(matchId.toString());
+
     logger.silly(
       `ihlManager onMatchSignedOut ${matchId} ${lobbyState._id} ${lobbyState.state}`
     );
@@ -682,7 +684,7 @@ class LobbyManager extends EventEmitter {
   }
 }
 Object.assign(
-  IHLManager.prototype,
+  LobbyManager.prototype,
   LobbyStateHandlers.LobbyStateHandlers({
     DotaBot,
     Db,

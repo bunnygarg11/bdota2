@@ -1,7 +1,7 @@
 var dotaBotModel = require("../../models/dotaBot.model");
 var dotaLobbyModel = require("../../models/dotaLobby.model");
 var dotaLobbyPlayerModel = require("../../models/dotaLobbyPlayer.model");
-const logger = require("../../util/log");
+const logger = require("./logger");
 const CONSTANTS = require("./constants");
 
 //**********************************************************BOT MODEL***************************************************************************************************************************** */

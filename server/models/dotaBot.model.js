@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const CONSTANTS=require("../services/dotaBot").CONSTANTS
 const Schema = mongoose.Schema;
 
 const dotaBotSchema = new Schema(
@@ -21,7 +22,7 @@ const dotaBotSchema = new Schema(
       //   type: DataTypes.STRING,
       //   defaultValue: CONSTANTS.BOT_OFFLINE,
       type: String,
-      default: CONSTANTS.BOT_OFFLINE,
+      default: "BOT_OFFLINE",
     },
 
     lobbyCount: {

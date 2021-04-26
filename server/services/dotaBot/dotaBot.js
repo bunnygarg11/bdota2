@@ -124,7 +124,7 @@ const defaultLobbyOptions = {
   game_name: Date.now().toString(),
   server_region: Dota2.ServerRegion.SINGAPORE,
   game_mode: Dota2.schema.DOTA_GameMode.DOTA_GAMEMODE_1V1MID,
-  series_type: dota2.SeriesType.NONE,
+  series_type: Dota2.SeriesType.NONE,
   game_version: 1,
   allow_cheats: false,
   fill_with_bots: false,
