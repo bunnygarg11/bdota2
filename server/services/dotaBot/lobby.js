@@ -170,7 +170,7 @@ const formatNameForLobby = (input) =>
 
 const assignGameMode = async (lobbyState) => ({
   ...lobbyState,
-  gameMode: await getDefaultGameMode(lobbyState),
+  gameMode: CONSTANTS.DOTA_GAMEMODE_1V1MID,
 });
 
 const addPlayer = (lobbyOrState, player) => Db.addPlayer(lobbyOrState, player);
@@ -236,7 +236,6 @@ module.exports = {
   // assignCaptains,
   // calcDefaultGameMode,
   // autoBalanceTeams,
-  getDefaultGameMode,
   assignGameMode,
   // getDraftingFaction,
   // getFactionCaptain,

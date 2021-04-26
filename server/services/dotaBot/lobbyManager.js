@@ -81,6 +81,17 @@ class LobbyManager extends EventEmitter {
       `ihlManager onClientReady logged in as ${this.client.user.tag}`
     );
 
+
+    this.matchTracker = new MatchTracker.MatchTracker(
+      parseInt(this.options.MATCH_POLL_INTERVAL || 5000)
+    );
+    this.matchTracker.on(CONSTANTS.EVENT_MATCH_STATS, (lobby) =>
+      this[CONSTANTS.EVENT_MATCH_STATS](lobby).catch((e) => logger.error(e))
+    );
+    this.matchTracker.on(CONSTANTS.EVENT_MATCH_NO_STATS, (lobby) =>
+      this[CONSTANTS.EVENT_MATCH_NO_STATS](lobby).catch((e) => logger.error(e))
+    );
+
     await Db.setAllBotsOffline();
   }
 
@@ -179,7 +190,7 @@ class LobbyManager extends EventEmitter {
     } catch (e) {
       logger.error(e);
       if (lobbyState) {
-        await Db.updateLobbyState(lobbyState)(CONSTANTS.STATE_FAILED);
+        await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_FAILED);
       }
       process.exit(1);
     } finally {
@@ -196,7 +207,7 @@ class LobbyManager extends EventEmitter {
   async onSetLobbyState(_lobbyState, state) {
     logger.silly(`ihlManager onSetLobbyState ${_lobbyState._id} ${state}`);
     const lobbyState = { ..._lobbyState, state };
-    await Db.updateLobbyState(lobbyState)(state);
+    await Db.updateLobbyState(lobbyState,state);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [state]).catch((e) =>
       logger.error(e)
     );
@@ -226,7 +237,7 @@ class LobbyManager extends EventEmitter {
    * @async
    */
   async onBotLobbyLeft(botId) {
-    await Db.updateBotStatus(CONSTANTS.BOT_IDLE)(botId);
+    await Db.updateBotStatus(CONSTANTS.BOT_IDLE,botId);
     return this.onBotAvailable();
   }
 
@@ -276,7 +287,7 @@ class LobbyManager extends EventEmitter {
       if (lobbyState.leagueid) {
         await this.botLeaveLobby(lobbyState);
       }
-      await Lobby.removeQueuers(lobbyState);
+      // await Lobby.removeQueuers(lobbyState);
       await Db.updateLobby(lobbyState);
       this.matchTracker.addLobby(lobbyState);
       this.matchTracker.run();
@@ -339,9 +350,11 @@ class LobbyManager extends EventEmitter {
    */
   async onLobbyReady(dotaLobbyId) {
     logger.silly(`ihlManager onLobbyReady ${dotaLobbyId}`);
-    const lobbyState = await Ihl.loadLobbyStateFromDotaLobbyId(
-      this.client.guilds
-    )(dotaLobbyId);
+    // const lobbyState = await Ihl.loadLobbyStateFromDotaLobbyId(
+    //   this.client.guilds
+    // )(dotaLobbyId);
+
+    const lobbyState =  await Db.findLobbyByDotaLobbyId(dotaLobbyId);
     logger.silly(
       `ihlManager onLobbyReady ${lobbyState._id} ${lobbyState.lobbyName}`
     );
@@ -400,14 +413,15 @@ class LobbyManager extends EventEmitter {
    * @param {external:Dota2.schema.CDOTALobbyMember[]} members - Array of dota lobby members
    */
   async onMatchOutcome(dotaLobbyId, matchOutcome, members) {
-    const lobbyState = await Ihl.loadLobbyStateFromDotaLobbyId(
-      this.client.guilds
-    )(dotaLobbyId);
+    // const lobbyState = await Ihl.loadLobbyStateFromDotaLobbyId(
+    //   this.client.guilds
+    // )(dotaLobbyId);
+    const lobbyState = await Db.findLobbyByDotaLobbyId(dotaLobbyId);
     logger.silly(
       `ihlManager onMatchOutcome ${dotaLobbyId} ${matchOutcome} ${lobbyState._id}`
     );
     await setMatchPlayerDetails(matchOutcome)(members)(lobbyState);
-    this[CONSTANTS.MSG_MATCH_STATS](lobbyState, lobbyState.inhouseState);
+    // this[CONSTANTS.MSG_MATCH_STATS](lobbyState, lobbyState.inhouseState);
     await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_MATCH_STATS);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_MATCH_STATS,
@@ -581,7 +595,7 @@ class LobbyManager extends EventEmitter {
         logger.silly("ihlManager loadBot loaded");
       } catch (e) {
         logger.error(e);
-        await Db.updateBotStatus(CONSTANTS.BOT_FAILED)(bot._id);
+        await Db.updateBotStatus(CONSTANTS.BOT_FAILED,bot._id);
         return null;
       }
     }

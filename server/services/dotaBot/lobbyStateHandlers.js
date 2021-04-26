@@ -235,13 +235,26 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
     logger.silly(`STATE_WAITING_FOR_BOT ${lobbyState._id} ${lobbyState.botId}`);
     if (lobbyState.botId == null) {
       // const bot = await Db.findUnassignedBot(lobbyState.inhouseState);
-      const bot = await Db.findUnassignedBot();
+      let bot = await Db.findUnassignedBot();
+      if(!bot){
+        let steamId64=process.env.steamId64
+         let accountName=process.env.accountName
+         let personaName=process.env.personaName
+         let password=process.env.password
+         let steam_guard_code=process.env.steam_guard_code
+        bot = await Db.findOrCreateBot(
+          steamId64,
+          accountName,
+          personaName,
+          password,
+          steam_guard_code
+        ); 
+      }
 
       if (bot) {
         logger.silly(`lobby run findUnassignedBot ${bot.steamId64}`);
         lobbyState.state = CONSTANTS.STATE_BOT_ASSIGNED;
         lobbyState = await Lobby.assignBotToLobby(lobbyState,bot._id);
-        // this[CONSTANTS.MSG_BOT_ASSIGNED](lobbyState, bot);
       }
     } else {
       lobbyState.state = CONSTANTS.STATE_BOT_ASSIGNED;

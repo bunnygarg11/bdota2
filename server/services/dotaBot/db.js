@@ -266,12 +266,12 @@ module.exports.findLobbyByMatchId = async (matchId) => {
   }
 };
 
-module.exports.findOrCreateLobby = async (lobbyName, player) => {
+module.exports.findOrCreateLobby = async ( player) => {
   try {
     return await dotaLobbyModel.create({
       state: CONSTANTS.STATE_WAITING_FOR_QUEUE,
       password: hri.random(),
-      lobbyName,
+      // lobbyName,
       players: [player],
     });
   } catch (err) {
@@ -522,7 +522,7 @@ module.exports.findAllMatchEndedLobbies = async () => {
 
 module.exports.findAllLobbiesInState = async (state) => {
   try {
-    return awaitdotaLobbyModel.find({
+    return await dotaLobbyModel.find({
       state,
     });
   } catch (err) {

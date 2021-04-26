@@ -3,15 +3,13 @@ const express = require("express");
 const cors = require("cors");
 // var compression = require("compression");
 
-var dotenv = require("dotenv").config(path.resolve(process.cwd(), "./.env"));
-const port = process.env.PORT || 3210;
-var Services = require("./services/network");
 
-require("./config/db")();
+var Services = require("./services/network");
+require("./config").config;
+require("./config").db();
+const port = process.env.PORT || 3210;
 
 const app = express();
-
-
 
 app.use(cors());
 // app.use(compression());

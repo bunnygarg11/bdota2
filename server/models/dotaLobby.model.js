@@ -7,74 +7,72 @@ let dotalobby = new Schema({
   //   // allowNull: false,
   //   type: String,
   // },
- 
+
   lobbyName: {
     // allowNull: false,
     type: String,
   },
- 
-  channelId: String,
- 
+
   // roleId: String,
- 
+
   dotaLobbyId: String,
- 
+
   password: String,
- 
+
   readyCheckTime: Date,
- 
+
   state: {
     // allowNull: false,
     type: String,
     defaultValue: CONSTANTS.STATE_NEW,
   },
- 
+
   gameMode: {
     // allowNull: false,
     type: String,
-    default: CONSTANTS.DOTA_GAMEMODE_CM,
+    default: CONSTANTS.DOTA_GAMEMODE_1V1MID,
   },
- 
+
   matchId: String,
- 
+
   // selectionPriority: {
   //   // allowNull: false,
   //   type: Number,
   //   default: 0,
   // },
- 
+
   // playerFirstPick: {
   //   // allowNull: false,
   //   type: Number,
   //   default: 0,
   // },
- 
+
   // firstPick: {
   //   // allowNull: false,
   //   type: Number,
   //   default: 0,
   // },
- 
+
   // radiantFaction: {
   //   // allowNull: false,
   //   type: Number,
   //   default: 0,
   // },
- 
+
   winner: {
     // allowNull: false,
     type: Number,
     default: 0,
   },
- 
+
   failReason: String,
- 
+
   startedAt: Date,
- 
+
   finishedAt: Date,
- 
+
   valveData: Object,
- 
+
   odotaData: Object,
 
   botId: {
@@ -83,15 +81,7 @@ let dotalobby = new Schema({
     // unique: true,
   },
 
-  
-
-  players: [
-   String
-  ],
-
-  
-
-  
+  players: [String],
 
   // *****************************************//
   //   name: { type: String, required: true },
@@ -112,8 +102,8 @@ let dotalobby = new Schema({
   //   ],
   //   createdBy: { type: String, required: true },
   //   updatedBy: { type: String },
-    createdOn: { type: Date, default: Date.now },
-    updatedOn: { type: Date, default: Date.now },
+  createdOn: { type: Date, default: Date.now },
+  updatedOn: { type: Date, default: Date.now },
 });
 
 dotalobby.plugin(paginate);

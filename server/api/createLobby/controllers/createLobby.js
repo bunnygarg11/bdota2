@@ -1,6 +1,7 @@
 const Db = require("../../../services/dotaBot").Db;
 const lobbyManager = require("../../../services/dotaBot").lobbyManager;
 const CONSTANTS = require("../../../services/dotaBot").CONSTANTS;
+const Lobby = require("../../../services/dotaBot").Lobby;
 var Services = require("../../../services/network");
 
 const _createsteamlobby = async (req, res, next) => {
@@ -19,12 +20,17 @@ const _createsteamlobby = async (req, res, next) => {
     if (lobbyState && lobbyState.length) {
       lobbyState = await Db.addPlayer(lobbyState[0], steamId);
     } else {
-      lobbyState = await Db.findOrCreateLobby(lobbyState, steamId);
+      lobbyState = await Db.findOrCreateLobby(steamId);
+      lobbyState = await Fp.pipeP(
+        Lobby.assignLobbyName,
+        Lobby.assignGameMode
+      )(lobbyState);
+      await Db.updateLobby(lobbyState);
     }
 
-    if ((lobbyState.players.length = 2)) {
+    if ((lobbyState.players.length == process.env.PLAYER_COUNT_FOR_LOBBY ||2)) {
       lobbyState.state = CONSTANTS.STATE_WAITING_FOR_BOT;
-      Db.updateLobby(lobbyState);
+      await Db.updateLobby(lobbyState);
 
       // lobbyManager.runLobby(lobbyState, [CONSTANTS.STATE_WAITING_FOR_BOT]);
         await lobbyManager[CONSTANTS.EVENT_RUN_LOBBY](lobbyState,[

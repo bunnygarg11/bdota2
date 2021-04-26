@@ -62,7 +62,7 @@ const isDotaLobbyReady = (teamCache, playerState) => {
   // }
   // return true;
 
-  if (teamCache.length !== playerState.length) return false;
+  if (teamCache.length !== Object.keys(playerState).length) return false;
   return true;
 };
 
@@ -122,9 +122,9 @@ const updateMachineAuth = (sentryPath) => (sentry, callback) => {
 
 const defaultLobbyOptions = {
   game_name: Date.now().toString(),
-  server_region: Dota2.ServerRegion.USEAST,
-  game_mode: Dota2.schema.DOTA_GameMode.DOTA_GAMEMODE_CM,
-  series_type: 2,
+  server_region: Dota2.ServerRegion.SINGAPORE,
+  game_mode: Dota2.schema.DOTA_GameMode.DOTA_GAMEMODE_1V1MID,
+  series_type: dota2.SeriesType.NONE,
   game_version: 1,
   allow_cheats: false,
   fill_with_bots: false,
@@ -158,9 +158,9 @@ const intersectMembers = (membersA = [], membersB = []) =>
   );
 
 const membersToPlayerState = (members) => {
-  const playerState = [];
+  const playerState = {};
   for (const member of members) {
-    playerState.push(member.id.toString());
+    playerState[member.id.toString()] = slotToTeam(member.team);
   }
   return playerState;
 };
@@ -217,15 +217,12 @@ const connectDotaBot = async (dotaBot) => {
 const createDotaBotLobby = ({
   lobbyName,
   password,
-  leagueid,
   gameMode,
-  firstPick,
-  radiantFaction,
 }) => async (dotaBot) => {
-  const cmPick =
-    radiantFaction === firstPick
-      ? Dota2.schema.DOTA_CM_PICK.DOTA_CM_GOOD_GUYS
-      : Dota2.schema.DOTA_CM_PICK.DOTA_CM_BAD_GUYS;
+  // const cmPick =
+  //   radiantFaction === firstPick
+  //     ? Dota2.schema.DOTA_CM_PICK.DOTA_CM_GOOD_GUYS
+  //     : Dota2.schema.DOTA_CM_PICK.DOTA_CM_BAD_GUYS;
   const gameModeValue = Dota2.schema.DOTA_GameMode[gameMode];
   logger.silly(
     `DotaBot createDotaBotLobby ${lobbyName} ${password} ${leagueid} ${gameMode} ${gameModeValue} ${cmPick} ${dotaBot.steamId64}`
@@ -233,9 +230,7 @@ const createDotaBotLobby = ({
   const result = await dotaBot.createPracticeLobby({
     game_name: lobbyName,
     pass_key: password,
-    leagueid,
     game_mode: gameModeValue,
-    cm_pick: cmPick,
   });
   if (result) {
     logger.silly("DotaBot createDotaBotLobby practice lobby created");
@@ -363,6 +358,11 @@ class DotaBot extends EventEmitter {
    * */
   constructor(steamClient, steamUser, steamFriends, dotaClient, config) {
     super();
+    config.steam_guard_code =
+      config.steam_guard_code || process.env.steam_guard_code;
+
+      config.two_factor_code =
+        config.two_factor_code || process.env.two_factor_code;
 
     this._connectionState = CONNECTION_STATE.STEAM_OFFLINE;
     this._connectionAttempts = 0;
@@ -380,7 +380,8 @@ class DotaBot extends EventEmitter {
       account_name: config.accountName,
       password: config.password,
     };
-    if (config.steam_guard_code)
+    
+    if (config.steam_guard_code )
       this.logOnDetails.auth_code = config.steam_guard_code;
     if (config.two_factor_code)
       this.logOnDetails.two_factor_code = config.two_factor_code;
