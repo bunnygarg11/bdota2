@@ -1,19 +1,3 @@
-// const mongoose = require("mongoose");
-// let mydb=process.env.MONGO_URI;
-
-// // mongoose
-// //   .connect(mydb, {
-// //     useNewUrlParser: true,
-// //     useCreateIndex: true,
-// //     useFindAndModify: false,
-// //     useUnifiedTopology: true
-// //   })
-// //   .then(() => {
-// //     console.log("mongo is connected");
-// //   })
-// //   .catch(e => {
-// //     console.log("mongo is not connected " + e);
-// //   });
 
 
 

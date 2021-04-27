@@ -68,7 +68,7 @@ class LobbyManager extends EventEmitter {
     this.eventQueue = [];
     this.blocking = false;
     this._runningLobby = false;
-    this.onClientReady().then(() => {});
+    this.onClientReady();
   }
 
   /**
@@ -76,14 +76,14 @@ class LobbyManager extends EventEmitter {
    * @async
    * @fires module:ihlManager~ready
    */
-  async onClientReady() {
-    logger.debug(
-      `ihlManager onClientReady logged in as ${this.client.user.tag}`
-    );
+   onClientReady() {
+    // logger.debug(
+    //   `ihlManager onClientReady logged in as ${this.client.user.tag}`
+    // );
 
 
     this.matchTracker = new MatchTracker.MatchTracker(
-      parseInt(this.options.MATCH_POLL_INTERVAL || 5000)
+      parseInt( 5000)
     );
     this.matchTracker.on(CONSTANTS.EVENT_MATCH_STATS, (lobby) =>
       this[CONSTANTS.EVENT_MATCH_STATS](lobby).catch((e) => logger.error(e))
@@ -92,7 +92,7 @@ class LobbyManager extends EventEmitter {
       this[CONSTANTS.EVENT_MATCH_NO_STATS](lobby).catch((e) => logger.error(e))
     );
 
-    await Db.setAllBotsOffline();
+    // await Db.setAllBotsOffline();
   }
 
   /**
@@ -677,7 +677,7 @@ class LobbyManager extends EventEmitter {
    */
   attachListeners() {
     for (const eventName of Object.keys(CONSTANTS)) {
-      if (eventName.startsWith("EVENT_") || eventName.startsWith("MSG_")) {
+      if (eventName.startsWith("EVENT_") ) {
         this.on(CONSTANTS[eventName], this[eventName].bind(this));
       }
     }

@@ -2,10 +2,12 @@ var path = require("path");
 const express = require("express");
 const cors = require("cors");
 // var compression = require("compression");
+require("dotenv").config(path.resolve(process.cwd(), "./.env"));
+
 
 
 var Services = require("./services/network");
-require("./config").config;
+// require("./config").config;
 require("./config").db();
 const port = process.env.PORT || 3210;
 

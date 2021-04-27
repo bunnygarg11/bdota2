@@ -19,7 +19,7 @@ const defaults = {
   STEAM_API_HOST: "api.steampowered.com", // comma separated list of hosts to fetch Steam API data from
   PORT: 3210,
   steam_guard_code: "3DW4R",
-  PLAYER_COUNT_FOR_LOBBY:2
+  PLAYER_COUNT_FOR_LOBBY: 2,
 };
 // ensure that process.env has all values in defaults, but prefer the process.env value
 Object.keys(defaults).forEach((key) => {

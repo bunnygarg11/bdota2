@@ -358,7 +358,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
         return this.onStartDotaLobby(lobbyState, dotaBot);
       }
     } else {
-      lobbyState.state = CONSTANTS.STATE_BOT_ASSIGNED;
+      lobbyState.state = CONSTANTS.STATE_WAITING_FOR_PLAYERS;
       await Db.updateLobby(lobbyState);
     }
     return lobbyState;
