@@ -500,7 +500,7 @@ class LobbyManager extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.eventQueue.push([fn, args, resolve, reject]);
       this.processEventQueue().catch((e) => logger.error(e) && process.exit(1));
-    }).timeout(10000);
+    }).timeout(100000);
   }
 
   /**

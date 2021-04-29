@@ -4,6 +4,7 @@ const Fp = require("./util/fp");
 const equalsLong = require("./util/equalsLong");
 const getRandomInt = require("./util/getRandomInt");
 // const SnowflakeUtil = require("discord.js/src/util/Snowflake");
+const util=require("util")
 
 const LobbyStateTransitions = {
   [CONSTANTS.STATE_CHECKING_READY]: {
@@ -331,6 +332,12 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
     const lobbyState = { ..._lobbyState };
     const dotaBot = this.getBot(lobbyState.botId);
     const players = await Lobby.getPlayers(lobbyState);
+
+    logger.debug(
+      `lobby run STATE_BOT_STARTED lobbyState ${util.inspect(
+        lobbyState
+      )} dotaBot ${util.inspect(dotaBot)}${util.inspect(players)} `
+    );
     // dotaBot.teamCache = players.reduce(
     //   Lobby.reducePlayerToTeamCache(lobbyState.radiantFaction),
     //   {}
@@ -338,7 +345,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
 
     dotaBot.teamCache = players
     // await Lobby.mapPlayers(DotaBot.invitePlayer(dotaBot))(lobbyState);
-    lobbyState.players.map(async (e) => await DotaBot.invitePlayer(e));
+    lobbyState.players.map(async (e) => await DotaBot.invitePlayer(dotaBot)(e));
     lobbyState.state = CONSTANTS.STATE_WAITING_FOR_PLAYERS;
     await Db.updateLobby(lobbyState);
     // this[CONSTANTS.MSG_LOBBY_INVITES_SENT](lobbyState);

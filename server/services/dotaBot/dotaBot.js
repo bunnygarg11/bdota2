@@ -49,7 +49,7 @@ const updatePlayerState = (steamId64, slot, playerState) => {
     }
   }
   logger.debug(
-    `DotaBot updatePlayerState ${steamId64} ${slot||"slot"} ${util.inspect(
+    `DotaBot updatePlayerState ${steamId64} ${slot || "slot"} ${util.inspect(
       playerState
     )} -> ${util.inspect(_playerState)}`
   );
@@ -62,7 +62,12 @@ const isDotaLobbyReady = (teamCache, playerState) => {
   // }
   // return true;
 
-  if (teamCache.length !== Object.keys(playerState).length) return false;
+  if (
+    !teamCache.length ||
+    !Object.keys(playerState).length ||
+    teamCache.length !== Object.keys(playerState).length
+  )
+    return false;
   return true;
 };
 
@@ -190,8 +195,7 @@ const processMembers = (oldMembers = [], newMembers = []) => {
   return members;
 };
 
-const invitePlayer = (dotaBot) => async (user) =>
-  dotaBot.inviteToLobby(user);
+const invitePlayer = (dotaBot) => async (user) => dotaBot.inviteToLobby(user);
 
 const kickPlayer = (dotaBot) => async (user) =>
   dotaBot.practiceLobbyKick(parseInt(convertor.to32(user.steamId64)));
@@ -214,11 +218,9 @@ const connectDotaBot = async (dotaBot) => {
   return dotaBot;
 };
 
-const createDotaBotLobby = ({
-  lobbyName,
-  password,
-  gameMode,
-}) => async (dotaBot) => {
+const createDotaBotLobby = ({ lobbyName, password, gameMode }) => async (
+  dotaBot
+) => {
   // const cmPick =
   //   radiantFaction === firstPick
   //     ? Dota2.schema.DOTA_CM_PICK.DOTA_CM_GOOD_GUYS
@@ -240,9 +242,8 @@ const createDotaBotLobby = ({
 
     await Db.updateBotStatusBySteamId(
       CONSTANTS.BOT_IN_LOBBY,
-       dotaBot.steamId64 
+      dotaBot.steamId64
     );
-
 
     logger.debug("DotaBot createDotaBotLobby bot status updated");
     await dotaBot.practiceLobbyKickFromTeam(dotaBot.accountId);
@@ -252,10 +253,7 @@ const createDotaBotLobby = ({
   logger.debug("DotaBot createDotaBotLobby practice lobby failed");
   //   await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IDLE)(dotaBot.steamId64);
 
-  await Db.updateBotStatusBySteamId(
-    CONSTANTS.BOT_IDLE ,
-     dotaBot.steamId64 
-  );
+  await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IDLE, dotaBot.steamId64);
   await dotaBot.leavePracticeLobby();
   await dotaBot.leaveLobbyChat();
   return false;
@@ -304,10 +302,7 @@ const joinDotaBotLobby = ({
   }
   //   await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IDLE)(dotaBot.steamId64);
 
-  await Db.updateBotStatusBySteamId(
-     CONSTANTS.BOT_IDLE ,
-     dotaBot.steamId64 ,
-  );
+  await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IDLE, dotaBot.steamId64);
   await dotaBot.leavePracticeLobby();
   await dotaBot.leaveLobbyChat();
   return false;
@@ -364,8 +359,8 @@ class DotaBot extends EventEmitter {
     config.steam_guard_code =
       config.steam_guard_code || process.env.steam_guard_code;
 
-      config.two_factor_code =
-        config.two_factor_code || process.env.two_factor_code;
+    config.two_factor_code =
+      config.two_factor_code || process.env.two_factor_code;
 
     this._connectionState = CONNECTION_STATE.STEAM_OFFLINE;
     this._connectionAttempts = 0;
@@ -383,8 +378,8 @@ class DotaBot extends EventEmitter {
       account_name: config.accountName,
       password: config.password,
     };
-    
-    if (config.steam_guard_code )
+
+    if (config.steam_guard_code)
       this.logOnDetails.auth_code = config.steam_guard_code;
     if (config.two_factor_code)
       this.logOnDetails.two_factor_code = config.two_factor_code;
@@ -426,19 +421,25 @@ class DotaBot extends EventEmitter {
 
       // bot should leave lobby if it does not belong to a valid lobby state
       const dotaLobbyId = lobby.lobby_id.toString();
-      Db.findLobbyByDotaLobbyId( dotaLobbyId ).then((lobbyState) => {
+      Db.findLobbyByDotaLobbyId(dotaLobbyId).then((lobbyState) => {
         if (!lobbyState) {
           logger.debug(
-            `DotaBot practiceLobbyUpdate lobbyState.dotaLobbyId ${dotaLobbyId} not found. Bot ${this.config._id || "id"} leaving lobby...`
+            `DotaBot practiceLobbyUpdate lobbyState.dotaLobbyId ${dotaLobbyId} not found. Bot ${
+              this.config._id || "id"
+            } leaving lobby...`
           );
-          return null
+          return null;
         } else if (lobbyState.botId !== this.config._id) {
           logger.debug(
-            `DotaBot practiceLobbyUpdate lobbyState.botId ${lobbyState.botId} mismatch. Bot ${this.config._id || "id"} leaving lobby...`
+            `DotaBot practiceLobbyUpdate lobbyState.botId ${
+              lobbyState.botId
+            } mismatch. Bot ${this.config._id || "id"} leaving lobby...`
           );
         } else if (validBotLobbyStates.indexOf(lobbyState.state) === -1) {
           logger.debug(
-            `DotaBot practiceLobbyUpdate lobbyState.state ${lobbyState.state} invalid. Bot ${this.config._id || "id"} leaving lobby...`
+            `DotaBot practiceLobbyUpdate lobbyState.state ${
+              lobbyState.state
+            } invalid. Bot ${this.config._id || "id"} leaving lobby...`
           );
         } else {
           return null;

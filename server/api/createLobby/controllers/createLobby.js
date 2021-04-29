@@ -4,7 +4,6 @@ const CONSTANTS = require("../../../services/dotaBot").CONSTANTS;
 const Lobby = require("../../../services/dotaBot").Lobby;
 const logger = require("../../../services/dotaBot").logger;
 var Services = require("../../../services/network");
-const Fp = require("../../../services/dotaBot/util").Fp;
 
 const _createsteamlobby = async (req, res, next) => {
   //   const db = await coreDB.openDBConnnection();
