@@ -48,8 +48,8 @@ const updatePlayerState = (steamId64, slot, playerState) => {
       _playerState[steamId64] = team;
     }
   }
-  logger.silly(
-    `DotaBot updatePlayerState ${steamId64} ${slot} ${util.inspect(
+  logger.debug(
+    `DotaBot updatePlayerState ${steamId64} ${slot||"slot"} ${util.inspect(
       playerState
     )} -> ${util.inspect(_playerState)}`
   );
@@ -105,7 +105,7 @@ const connectToDota = async (dotaClient) =>
   }).timeout(10000);
 
 const updateServers = (servers) => {
-  logger.silly("DotaBot Received servers.");
+  logger.debug("DotaBot Received servers.");
   if (servers && servers.length) {
     fs.writeFileSync("servers", JSON.stringify(servers));
   }
@@ -114,7 +114,7 @@ const updateServers = (servers) => {
 
 const updateMachineAuth = (sentryPath) => (sentry, callback) => {
   fs.writeFileSync(sentryPath, sentry.bytes);
-  logger.silly("DotaBot sentryfile saved");
+  logger.debug("DotaBot sentryfile saved");
   callback({
     sha_file: crypto.createHash("sha1").update(sentry.bytes).digest(),
   });
@@ -197,7 +197,7 @@ const kickPlayer = (dotaBot) => async (user) =>
   dotaBot.practiceLobbyKick(parseInt(convertor.to32(user.steamId64)));
 
 const disconnectDotaBot = async (dotaBot) => {
-  logger.silly(`DotaBot disconnectDotaBot ${dotaBot.steamId64}`);
+  logger.debug(`DotaBot disconnectDotaBot ${dotaBot.steamId64}`);
   await dotaBot.disconnect();
   //   await Db.updateBotStatusBySteamId(CONSTANTS.BOT_OFFLINE)(dotaBot.steamId64);
   await Db.updateBotStatusBySteamId(CONSTANTS.BOT_OFFLINE, dotaBot.steamId64);
@@ -206,7 +206,7 @@ const disconnectDotaBot = async (dotaBot) => {
 };
 
 const connectDotaBot = async (dotaBot) => {
-  logger.silly(`DotaBot connectDotaBot ${dotaBot.steamId64}`);
+  logger.debug(`DotaBot connectDotaBot ${dotaBot.steamId64}`);
   await dotaBot.connect();
   //   await Db.updateBotStatusBySteamId(CONSTANTS.BOT_ONLINE)(dotaBot.steamId64);
 
@@ -224,8 +224,8 @@ const createDotaBotLobby = ({
   //     ? Dota2.schema.DOTA_CM_PICK.DOTA_CM_GOOD_GUYS
   //     : Dota2.schema.DOTA_CM_PICK.DOTA_CM_BAD_GUYS;
   const gameModeValue = Dota2.schema.DOTA_GameMode[gameMode];
-  logger.silly(
-    `DotaBot createDotaBotLobby ${lobbyName} ${password} ${leagueid} ${gameMode} ${gameModeValue} ${cmPick} ${dotaBot.steamId64}`
+  logger.debug(
+    `DotaBot createDotaBotLobby ${lobbyName} ${password}  ${gameMode} ${gameModeValue}  ${dotaBot.steamId64}`
   );
   const result = await dotaBot.createPracticeLobby({
     game_name: lobbyName,
@@ -233,7 +233,7 @@ const createDotaBotLobby = ({
     game_mode: gameModeValue,
   });
   if (result) {
-    logger.silly("DotaBot createDotaBotLobby practice lobby created");
+    logger.debug("DotaBot createDotaBotLobby practice lobby created");
     // await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IN_LOBBY)(
     //   dotaBot.steamId64
     // );
@@ -243,12 +243,13 @@ const createDotaBotLobby = ({
        dotaBot.steamId64 
     );
 
-    logger.silly("DotaBot createDotaBotLobby bot status updated");
+
+    logger.debug("DotaBot createDotaBotLobby bot status updated");
     await dotaBot.practiceLobbyKickFromTeam(dotaBot.accountId);
     await dotaBot.joinLobbyChat();
     return true;
   }
-  logger.silly("DotaBot createDotaBotLobby practice lobby failed");
+  logger.debug("DotaBot createDotaBotLobby practice lobby failed");
   //   await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IDLE)(dotaBot.steamId64);
 
   await Db.updateBotStatusBySteamId(
@@ -274,8 +275,10 @@ const joinDotaBotLobby = ({
       ? Dota2.schema.DOTA_CM_PICK.DOTA_CM_GOOD_GUYS
       : Dota2.schema.DOTA_CM_PICK.DOTA_CM_BAD_GUYS;
   const gameModeValue = Dota2.schema.DOTA_GameMode[gameMode];
-  logger.silly(
-    `DotaBot joinDotaBotLobby ${lobbyName} ${password} ${leagueid} ${gameMode} ${gameModeValue} ${cmPick}`
+  logger.debug(
+    `DotaBot joinDotaBotLobby ${lobbyName} ${password} ${
+      leagueid || "leagueid"
+    } ${gameMode} ${gameModeValue} ${cmPick || "cmPick"}`
   );
   const options = {
     game_name: lobbyName,
@@ -324,7 +327,7 @@ const startDotaLobby = async (dotaBot) => {
 
 const loadDotaBotTickets = async (dotaBot) => {
   const leagueInfos = await dotaBot.requestLeagueInfoListAdmins();
-  logger.silly(`loadDotaBotTickets ${util.inspect(leagueInfos)}`);
+  logger.debug(`loadDotaBotTickets ${util.inspect(leagueInfos)}`);
   const tickets = await Fp.mapPromise(Db.upsertTicket)(leagueInfos);
   const bot = await Db.findBotBySteamId64(dotaBot.steamId64);
   await Db.setTicketsOf(bot)(tickets);
@@ -390,7 +393,7 @@ class DotaBot extends EventEmitter {
       const sentry = fs.readFileSync(`sentry/${config.steamId64}`);
       if (sentry.length) this.logOnDetails.sha_sentryfile = sentry;
     } catch (beef) {
-      logger.silly(`DotaBot Cannot load the sentry. ${beef}`);
+      logger.debug(`DotaBot Cannot load the sentry. ${beef}`);
     }
 
     // Block queue until GC is ready
@@ -399,10 +402,13 @@ class DotaBot extends EventEmitter {
     this.Dota2.on("ready", () => this.onDotaReady());
     this.Dota2.on("unready", () => this.onDotaUnready());
     this.Dota2.on("unhandled", (kMsg) =>
-      logger.silly(`DotaBot UNHANDLED MESSAGE ${kMsg}`)
+      logger.debug(`DotaBot UNHANDLED MESSAGE ${kMsg}`)
     );
     this.Dota2.on("practiceLobbyUpdate", (lobby) => {
-      logger.silly("DotaBot practiceLobbyUpdate");
+      logger.debug("DotaBot practiceLobbyUpdate");
+      logger.debug(
+        `DotaBot practiceLobbyUpdate this.lobby  ${util.inspect(this.lobby)} `
+      );
       if (this.lobby) this.processLobbyUpdate(this.lobby, lobby);
       if (
         lobby.match_outcome ===
@@ -422,16 +428,17 @@ class DotaBot extends EventEmitter {
       const dotaLobbyId = lobby.lobby_id.toString();
       Db.findLobbyByDotaLobbyId( dotaLobbyId ).then((lobbyState) => {
         if (!lobbyState) {
-          logger.silly(
-            `DotaBot practiceLobbyUpdate lobbyState.dotaLobbyId ${dotaLobbyId} not found. Bot ${this.config.id} leaving lobby...`
+          logger.debug(
+            `DotaBot practiceLobbyUpdate lobbyState.dotaLobbyId ${dotaLobbyId} not found. Bot ${this.config._id || "id"} leaving lobby...`
           );
-        } else if (lobbyState.botId !== this.config.id) {
-          logger.silly(
-            `DotaBot practiceLobbyUpdate lobbyState.botId ${lobbyState.botId} mismatch. Bot ${this.config.id} leaving lobby...`
+          return null
+        } else if (lobbyState.botId !== this.config._id) {
+          logger.debug(
+            `DotaBot practiceLobbyUpdate lobbyState.botId ${lobbyState.botId} mismatch. Bot ${this.config._id || "id"} leaving lobby...`
           );
         } else if (validBotLobbyStates.indexOf(lobbyState.state) === -1) {
-          logger.silly(
-            `DotaBot practiceLobbyUpdate lobbyState.state ${lobbyState.state} invalid. Bot ${this.config.id} leaving lobby...`
+          logger.debug(
+            `DotaBot practiceLobbyUpdate lobbyState.state ${lobbyState.state} invalid. Bot ${this.config._id || "id"} leaving lobby...`
           );
         } else {
           return null;
@@ -448,10 +455,10 @@ class DotaBot extends EventEmitter {
       this.emit(CONSTANTS.EVENT_MATCH_SIGNEDOUT, matchId)
     );
     this.Dota2.on("practiceLobbyResponse", (result, body) => {
-      logger.silly(`DotaBot practiceLobbyResponse ${util.inspect(body)}`);
+      logger.debug(`DotaBot practiceLobbyResponse ${util.inspect(body)}`);
     });
     this.Dota2.on("chatMessage", (channel, senderName, message, chatData) => {
-      logger.silly(
+      logger.debug(
         `DotaBot chatMessage ${channel} ${senderName} {$message} ${util.inspect(
           chatData
         )}`
@@ -648,7 +655,7 @@ class DotaBot extends EventEmitter {
    * Attempts to connect to steam and connect to Dota
    */
   async onSteamClientError(error) {
-    logger.silly("DotaBot connection closed by server. Trying reconnect");
+    logger.debug("DotaBot connection closed by server. Trying reconnect");
     this._connectionState = CONNECTION_STATE.STEAM_OFFLINE;
     logger.error(util.inspect(error));
     // Block queue while there's no access to Steam
@@ -662,7 +669,7 @@ class DotaBot extends EventEmitter {
    */
   onDotaReady() {
     // Activate queue when GC is ready
-    logger.silly("DotaBot node-dota2 ready.");
+    logger.debug("DotaBot node-dota2 ready.");
     this.release();
   }
 
@@ -671,7 +678,7 @@ class DotaBot extends EventEmitter {
    * Blocks the queue.
    */
   onDotaUnready() {
-    logger.silly("DotaBot node-dota2 unready.");
+    logger.debug("DotaBot node-dota2 unready.");
     // Block queue when GC is not ready
     this.block();
   }
@@ -687,7 +694,7 @@ class DotaBot extends EventEmitter {
       this._connectionAttempts = 0;
       this._connecting = true;
       while (this.connectionAttempts < this.maxConnectionAttempts) {
-        logger.silly("DotaBot connecting...");
+        logger.debug("DotaBot connecting...");
         this._connectionAttempts += 1;
         await this._connectToSteam();
         await this._logOnToSteam();
@@ -696,13 +703,13 @@ class DotaBot extends EventEmitter {
           this._connecting = false;
           return true;
         } else {
-          logger.silly(
+          logger.debug(
             `DotaBot failed to connect. Trying again... ${this.connectionAttempts}/${this.maxConnectionAttempts}`
           );
           await Promise.delay(1000);
         }
       }
-      logger.silly("DotaBot connection retry limit reached.");
+      logger.debug("DotaBot connection retry limit reached.");
       this._connecting = false;
       return false;
     }
@@ -733,7 +740,7 @@ class DotaBot extends EventEmitter {
    */
   async _logOnToSteam() {
     if (this.connectionState === CONNECTION_STATE.STEAM_CONNECTED) {
-      logger.silly("DotaBot logOnToSteam logging on steamUser...");
+      logger.debug("DotaBot logOnToSteam logging on steamUser...");
       this._connectionState = CONNECTION_STATE.STEAM_LOGGING_IN;
       let logOnResult;
       try {
@@ -748,7 +755,7 @@ class DotaBot extends EventEmitter {
       if (logOnResult === steam.EResult.OK) {
         this.steamFriends.setPersonaState(steam.EPersonaState.Online);
         this.steamFriends.setPersonaName(this.config.personaName);
-        logger.silly("DotaBot set steam persona state and name.");
+        logger.debug("DotaBot set steam persona state and name.");
         this._connectionState = CONNECTION_STATE.STEAM_LOGGED_IN;
       } else if (logOnResult === steam.EResult.InvalidPassword) {
         // Block queue while there's no access to Steam
@@ -771,7 +778,7 @@ class DotaBot extends EventEmitter {
         await connectToDota(this.Dota2);
         this._connectionState = CONNECTION_STATE.DOTA_CONNECTED;
         // Activate queue when GC is ready
-        logger.silly("DotaBot node-dota2 ready.");
+        logger.debug("DotaBot node-dota2 ready.");
         this.release();
       } catch (e) {
         // Block queue while there's no access to Steam
@@ -791,7 +798,7 @@ class DotaBot extends EventEmitter {
       this.Dota2.exit();
       this.steamClient.disconnect();
       this._connectionState = CONNECTION_STATE.STEAM_OFFLINE;
-      logger.silly("DotaBot Logged off.");
+      logger.debug("DotaBot Logged off.");
     });
   }
 
@@ -799,24 +806,28 @@ class DotaBot extends EventEmitter {
     const members = processMembers(oldLobby.members, newLobby.members);
 
     for (const member of members.left) {
-      logger.silly(`DotaBot processLobbyUpdate member left ${member.id}`);
+      logger.debug(
+        `DotaBot processLobbyUpdate member left ${member.id || "member.id"}`
+      );
       this.emit(CONSTANTS.MSG_LOBBY_PLAYER_LEFT, member);
     }
 
     for (const member of members.joined) {
-      logger.silly(`DotaBot processLobbyUpdate member joined ${member.id}`);
+      logger.debug(
+        `DotaBot processLobbyUpdate member joined ${member.id || "member.id"} `
+      );
       this.emit(CONSTANTS.MSG_LOBBY_PLAYER_JOINED, member);
     }
 
     // for (const memberState of members.changedSlot) {
-    //   logger.silly(
+    //   logger.debug(
     //     `DotaBot processLobbyUpdate member slot changed ${util.inspect(
     //       memberState.previous
     //     )} => ${util.inspect(memberState.current)}`
     //   );
     //   // this.emit(CONSTANTS.MSG_LOBBY_PLAYER_CHANGED_SLOT, memberState);
     //   const steamId64 = memberState.current.id.toString();
-    //   logger.silly(
+    //   logger.debug(
     //     `DotaBot processLobbyUpdate steamId64 ${steamId64} teamCache ${
     //       this.teamCache[steamId64]
     //     } slotToTeam ${slotToTeam(memberState.current.team)}`
@@ -826,7 +837,7 @@ class DotaBot extends EventEmitter {
     //       this.teamCache[steamId64] !== slotToTeam(memberState.current.team)
     //     ) {
     //       const accountId = parseInt(convertor.to32(steamId64));
-    //       logger.silly(
+    //       logger.debug(
     //         `DotaBot processLobbyUpdate slot change mismatch. kicking ${accountId} ${typeof accountId}`
     //       );
     //       this.practiceLobbyKickFromTeam(accountId).catch((e) =>
@@ -839,14 +850,14 @@ class DotaBot extends EventEmitter {
     if (
       isDotaLobbyReady(this.teamCache, membersToPlayerState(newLobby.members))
     ) {
-      logger.silly("DotaBot processLobbyUpdate lobby ready");
+      logger.debug("DotaBot processLobbyUpdate lobby ready");
       this.emit(CONSTANTS.EVENT_LOBBY_READY);
     }
   }
 
   async sendMessage(message) {
     return new Promise((resolve) => {
-      logger.silly(`DotaBot sendMessage ${message}`);
+      logger.debug(`DotaBot sendMessage ${message}`);
       this.schedule(() => {
         if (this.lobby) {
           this.Dota2.sendMessage(
@@ -873,7 +884,7 @@ class DotaBot extends EventEmitter {
       this.schedule(() => {
         if (this.lobby) {
           this.Dota2.once("inviteCreated", () => resolve(true));
-          logger.silly(`DotaBot inviteToLobby ${steamId64}`);
+          logger.debug(`DotaBot inviteToLobby ${steamId64}`);
           this.Dota2.inviteToLobby(Long.fromString(steamId64));
         } else {
           logger.error("DotaBot inviteToLobby missing lobby");
@@ -888,14 +899,14 @@ class DotaBot extends EventEmitter {
       this.schedule(() => {
         if (this.lobby) {
           this.lobbyOptions = options;
-          logger.silly(
+          logger.debug(
             `DotaBot configPracticeLobby ${util.inspect(this.lobbyOptions)}`
           );
           this.Dota2.configPracticeLobby(
             this.dotaLobbyId,
             this.lobbyOptions,
             (err, body) => {
-              logger.silly(
+              logger.debug(
                 `DotaBot configPracticeLobby response ${err} ${body}`
               );
               resolve(body.eresult === steam.EResult.OK);
@@ -913,7 +924,7 @@ class DotaBot extends EventEmitter {
     return new Promise((resolve) => {
       this.schedule(() => {
         if (this.lobby) {
-          logger.silly("DotaBot flipLobbyTeams");
+          logger.debug("DotaBot flipLobbyTeams");
           for (const [steamId64, team] of Object.entries(this.teamCache)) {
             this.teamCache[steamId64] = 3 - team;
           }
@@ -931,9 +942,9 @@ class DotaBot extends EventEmitter {
   async launchPracticeLobby() {
     return new Promise((resolve, reject) => {
       this.schedule(() => {
-        logger.silly("DotaBot launchPracticeLobby");
+        logger.debug("DotaBot launchPracticeLobby");
         this.Dota2.launchPracticeLobby((err) => {
-          logger.silly(`DotaBot launchPracticeLobby response ${err}`);
+          logger.debug(`DotaBot launchPracticeLobby response ${err}`);
           if (!err) {
             resolve(this.lobby);
           } else {
@@ -954,9 +965,9 @@ class DotaBot extends EventEmitter {
     return new Promise((resolve) => {
       this.schedule(() => {
         if (this.lobby) {
-          logger.silly(`DotaBot practiceLobbyKickFromTeam ${accountId}`);
+          logger.debug(`DotaBot practiceLobbyKickFromTeam ${accountId}`);
           this.Dota2.practiceLobbyKickFromTeam(accountId, (err, body) => {
-            logger.silly(
+            logger.debug(
               `DotaBot practiceLobbyKickFromTeam response ${err} ${body}`
             );
             resolve(body.eresult === steam.EResult.OK);
@@ -978,9 +989,9 @@ class DotaBot extends EventEmitter {
     return new Promise((resolve) => {
       this.schedule(() => {
         if (this.lobby) {
-          logger.silly(`DotaBot practiceLobbyKick ${accountId}`);
+          logger.debug(`DotaBot practiceLobbyKick ${accountId}`);
           this.Dota2.practiceLobbyKick(accountId, (err, body) => {
-            logger.silly(`DotaBot practiceLobbyKick response ${err} ${body}`);
+            logger.debug(`DotaBot practiceLobbyKick response ${err} ${body}`);
             resolve(body.eresult === steam.EResult.OK);
           });
         } else {
@@ -994,9 +1005,9 @@ class DotaBot extends EventEmitter {
   async leavePracticeLobby() {
     return new Promise((resolve) => {
       this.schedule(() => {
-        logger.silly("DotaBot leavePracticeLobby");
+        logger.debug("DotaBot leavePracticeLobby");
         this.Dota2.leavePracticeLobby((err, body) => {
-          logger.silly(`DotaBot leavePracticeLobby response ${err} ${body}`);
+          logger.debug(`DotaBot leavePracticeLobby response ${err} ${body}`);
           resolve(body.eresult === steam.EResult.OK);
         });
       });
@@ -1007,7 +1018,7 @@ class DotaBot extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.schedule(() => {
         try {
-          logger.silly("DotaBot abandonCurrentGame");
+          logger.debug("DotaBot abandonCurrentGame");
           // abandonCurrentGame does not callback
           this.Dota2.abandonCurrentGame();
           resolve();
@@ -1022,9 +1033,9 @@ class DotaBot extends EventEmitter {
   async destroyLobby() {
     return new Promise((resolve) => {
       this.schedule(() => {
-        logger.silly("DotaBot destroyLobby");
+        logger.debug("DotaBot destroyLobby");
         this.Dota2.destroyLobby((err, body) => {
-          logger.silly(`DotaBot destroyLobby response ${err} ${body}`);
+          logger.debug(`DotaBot destroyLobby response ${err} ${body}`);
           this.lobbyOptions = null;
           resolve(
             body.result ===
@@ -1039,7 +1050,7 @@ class DotaBot extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.schedule(() => {
         try {
-          logger.silly(`DotaBot joinChat ${channelName}`);
+          logger.debug(`DotaBot joinChat ${channelName || "channelName"}`);
           this.Dota2.joinChat(channelName, channelType);
           resolve();
         } catch (e) {
@@ -1070,7 +1081,7 @@ class DotaBot extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.schedule(() => {
         try {
-          logger.silly(`DotaBot leaveChat ${channelName}`);
+          logger.debug(`DotaBot leaveChat ${channelName || "channelName"}`);
           this.Dota2.leaveChat(channelName, channelType);
           resolve();
         } catch (e) {
@@ -1106,7 +1117,7 @@ class DotaBot extends EventEmitter {
     return new Promise((resolve) => {
       this.schedule(() => {
         this.lobbyOptions = options;
-        logger.silly(`DotaBot joinPracticeLobby ${dotaLobbyId}`);
+        logger.debug(`DotaBot joinPracticeLobby ${dotaLobbyId}`);
         this.Dota2.joinPracticeLobby(
           Long.fromString(dotaLobbyId),
           this.lobbyOptions.pass_key,
@@ -1125,7 +1136,7 @@ class DotaBot extends EventEmitter {
     return new Promise((resolve) => {
       this.schedule(() => {
         this.lobbyOptions = options;
-        logger.silly(
+        logger.debug(
           `DotaBot createPracticeLobby ${util.inspect(this.lobbyOptions)}`
         );
         this.Dota2.createPracticeLobby(this.lobbyOptions, (err, body) => {
@@ -1138,10 +1149,10 @@ class DotaBot extends EventEmitter {
   async requestLeagueInfoListAdmins() {
     return new Promise((resolve, reject) => {
       this.schedule(() => {
-        logger.silly("DotaBot requestLeagueInfoListAdmins");
+        logger.debug("DotaBot requestLeagueInfoListAdmins");
         this.Dota2.requestLeagueInfoListAdmins((err, body) => {
           if (!err) {
-            logger.silly(
+            logger.debug(
               `DotaBot requestLeagueInfoListAdmins ${util.inspect(body)}`
             );
             resolve(

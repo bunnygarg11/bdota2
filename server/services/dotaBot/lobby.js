@@ -7,23 +7,15 @@ const combinations = require("./util/combinations");
 const templateString = require("./util/templateString");
 const capitalize = require("./util/capitalize");
 const CONSTANTS = require("./constants");
-// const Guild = require("./guild");
 const Db = require("./db");
-// const cache = require("./cache");
 const Fp = require("./util/fp");
-// const AsyncLock = require("async-lock");
 
-// const lock = new AsyncLock();
 const getLobby = (lobbyOrState) => {
-  //   if (lobbyOrState instanceof Sequelize.Model) {
-  //     const lobby = await lobbyOrState.reload();
-  //     cache.Lobbies.set(lobby.id, lobby);
-  //     return lobby;
-  //   }
+  
   return Db.findLobbyById(lobbyOrState._id);
 };
 
-const getPlayers = (lobbyOrState) => Db.getLobbyPlayers(lobbyOrState);
+const getPlayers = (lobbyOrState) => Db.getLobbyPlayers(lobbyOrState).then(e=>e.players);
 
 const getPlayerByUserId = (lobbyOrState, id) =>
   Db.getLobbyPlayers(lobbyOrState, { players: id });
@@ -48,7 +40,7 @@ const assignBotToLobby = async (lobbyState, botId) => {
 
 const checkPlayers = async (lobbyState) => {
   const players = await getPlayers(lobbyState);
-  if (players.length !== 2) {
+  if (players.length != (process.env.PLAYER_COUNT_FOR_LOBBY || 2)) {
     return {
       ...lobbyState,
       state: CONSTANTS.STATE_FAILED,
@@ -83,7 +75,7 @@ const validateLobbyPlayers = async (_lobbyState) => {
       // remove lobby players and add them back as active queuers
       lobbyState = await checkPlayers(_lobbyState);
       if (lobbyState.state === CONSTANTS.STATE_FAILED) {
-        logger.silly(
+        logger.debug(
           `validateLobbyPlayers ${lobbyState._id} failed, returning players to queue`
         );
         lobbyState.state = CONSTANTS.STATE_WAITING_FOR_QUEUE;
@@ -96,7 +88,7 @@ const validateLobbyPlayers = async (_lobbyState) => {
       // remove lobby players and set queuers active
       lobbyState = await checkPlayers(_lobbyState);
       if (lobbyState.state === CONSTANTS.STATE_FAILED) {
-        logger.silly(
+        logger.debug(
           `validateLobbyPlayers ${lobbyState._id} failed, returning players to queue`
         );
         // await returnPlayersToQueue(lobbyState);
@@ -109,12 +101,12 @@ const validateLobbyPlayers = async (_lobbyState) => {
     case CONSTANTS.STATE_NEW:
     // falls through
     default:
-      logger.silly(
+      logger.debug(
         `validateLobbyPlayers ${_lobbyState._id} default ${_lobbyState.state}`
       );
       return { ..._lobbyState };
   }
-  logger.silly(
+  logger.debug(
     `validateLobbyPlayers ${lobbyState._id} end ${_lobbyState.state} to ${lobbyState.state}`
   );
   return lobbyState;
@@ -137,7 +129,7 @@ const resetLobbyState = async (_lobbyState) => {
     case CONSTANTS.STATE_MATCH_IN_PROGRESS:
       if (!lobbyState.leagueid) {
         lobbyState.state = CONSTANTS.STATE_MATCH_NO_STATS;
-        logger.silly(
+        logger.debug(
           `resetLobbyState ${_lobbyState._id} ${_lobbyState.state} to ${lobbyState.state}`
         );
         break;
@@ -147,13 +139,13 @@ const resetLobbyState = async (_lobbyState) => {
     // falls through
     case CONSTANTS.STATE_BOT_STARTED:
       lobbyState.state = CONSTANTS.STATE_WAITING_FOR_BOT;
-      logger.silly(
+      logger.debug(
         `resetLobbyState ${_lobbyState._id} ${_lobbyState.state} to ${lobbyState.state}`
       );
       break;
     case CONSTANTS.STATE_CHECKING_READY:
       lobbyState.state = CONSTANTS.STATE_BEGIN_READY;
-      logger.silly(
+      logger.debug(
         `resetLobbyState ${_lobbyState._id} ${_lobbyState.state} to ${lobbyState.state}`
       );
       break;
@@ -184,6 +176,8 @@ const updateLobbyPlayerBySteamId = async(data, lobbyOrState, steamId64) => {
     });
 };
 module.exports = {
+  
+  updateLobbyPlayerBySteamId,
   getLobby,
   getPlayers,
   getPlayerByUserId,

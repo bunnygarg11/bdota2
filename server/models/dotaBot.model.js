@@ -4,7 +4,6 @@ const Schema = mongoose.Schema;
 
 const dotaBotSchema = new Schema(
   {
-      
     steamId64: String,
     accountName: {
       //   allowNull: false,
@@ -33,6 +32,8 @@ const dotaBotSchema = new Schema(
       type: Number,
       default: 0,
     },
+
+    password: String,
     //************************ */
     // data: {
     //   type: Object,

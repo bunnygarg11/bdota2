@@ -26,19 +26,19 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
     return { ..._lobbyState, state: CONSTANTS.STATE_WAITING_FOR_QUEUE };
   },
   async [CONSTANTS.STATE_WAITING_FOR_QUEUE](_lobbyState) {
-    logger.silly(`STATE_WAITING_FOR_QUEUE ${_lobbyState._id}`);
+    logger.debug(`STATE_WAITING_FOR_QUEUE ${_lobbyState._id}`);
     const lobbyState = this[_lobbyState.queueType](_lobbyState);
     await Db.updateLobby(lobbyState);
     return lobbyState;
   },
   async [CONSTANTS.STATE_BEGIN_READY](_lobbyState) {
     let lobbyState = { ..._lobbyState };
-    logger.silly(`STATE_BEGIN_READY ${_lobbyState._id}`);
+    logger.debug(`STATE_BEGIN_READY ${_lobbyState._id}`);
     lobbyState = await Fp.pipeP(
       Lobby.assignLobbyName,
       Lobby.assignGameMode
     )(lobbyState);
-    logger.silly(`STATE_BEGIN_READY ${lobbyState._id} ${lobbyState.lobbyName}`);
+    logger.debug(`STATE_BEGIN_READY ${lobbyState._id} ${lobbyState.lobbyName}`);
     lobbyState.channel = await Guild.setChannelName(lobbyState.lobbyName)(
       lobbyState.channel
     );
@@ -72,10 +72,10 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
   async [CONSTANTS.STATE_CHECKING_READY](_lobbyState) {
     const lobbyState = { ..._lobbyState };
     const playersNotReady = await Lobby.getNotReadyPlayers()(lobbyState);
-    logger.silly(
+    logger.debug(
       `STATE_CHECKING_READY ${lobbyState._id} playersNotReady ${playersNotReady.length}`
     );
-    logger.silly(
+    logger.debug(
       `STATE_CHECKING_READY ${lobbyState._id} readyCheckTimeout ${
         lobbyState.inhouseState.readyCheckTimeout
       } elapsed ${Date.now() - lobbyState.readyCheckTime}`
@@ -87,12 +87,12 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
       this.unregisterLobbyTimeout(lobbyState);
       // this[CONSTANTS.MSG_PLAYERS_READY](lobbyState);
     } else if (Lobby.isReadyCheckTimedOut(lobbyState)) {
-      logger.silly(
+      logger.debug(
         `STATE_CHECKING_READY ${lobbyState._id} isReadyCheckTimedOut true`
       );
       await Fp.allPromise(
         playersNotReady.map((player) => {
-          logger.silly(
+          logger.debug(
             `STATE_CHECKING_READY ${lobbyState._id} removing player not ready ${player.id}`
           );
           if (lobbyState.captain1UserId === player.id) {
@@ -112,7 +112,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
       lobbyState.state = CONSTANTS.STATE_WAITING_FOR_QUEUE;
       lobbyState.readyCheckTime = null;
     } else {
-      logger.silly(
+      logger.debug(
         `STATE_CHECKING_READY ${lobbyState._id} isReadyCheckTimedOut false`
       );
     }
@@ -126,7 +126,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
       lobbyState.captain2UserId == null
     ) {
       const [captain1, captain2] = await Lobby.assignCaptains(lobbyState);
-      logger.silly(
+      logger.debug(
         `lobby run assignCaptains captain1 ${!!captain1} captain2 ${!!captain2}`
       );
       lobbyState.captain1UserId = captain1 ? captain1.id : null;
@@ -139,7 +139,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
         // this[CONSTANTS.MSG_AUTOBALANCING](lobbyState);
       }
     } else {
-      logger.silly(
+      logger.debug(
         `lobby run assignCaptains captains exist ${lobbyState.captain1UserId}, ${lobbyState.captain2UserId}`
       );
       lobbyState.state = CONSTANTS.STATE_SELECTION_PRIORITY;
@@ -180,7 +180,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
       lobbyState.state = CONSTANTS.STATE_DRAFTING_PLAYERS;
       await Db.updateLobby(lobbyState);
     }
-    logger.silly(
+    logger.debug(
       `lobby run STATE_SELECTION_PRIORITY selectionPriority ${lobbyState.selectionPriority} playerFirstPick ${lobbyState.playerFirstPick} first pick ${lobbyState.firstPick} radiantFaction ${lobbyState.radiantFaction}`
     );
     return lobbyState;
@@ -191,7 +191,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
       lobbyState.inhouseState.draftOrder
     )(lobbyState);
     const captain = await Lobby.getFactionCaptain(lobbyState)(faction);
-    logger.silly(
+    logger.debug(
       `lobby run STATE_DRAFTING_PLAYERS ${faction} ${captain} ${lobbyState.playerFirstPick} ${lobbyState.firstPick} ${lobbyState.radiantFaction}`
     );
     if (captain) {
@@ -206,14 +206,14 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
     const lobbyState = { ..._lobbyState };
     const playersNoTeam = await Lobby.getNoFactionPlayers()(lobbyState);
     const unassignedCount = playersNoTeam.length;
-    logger.silly(`Autobalancing unassigned count ${unassignedCount}`);
+    logger.debug(`Autobalancing unassigned count ${unassignedCount}`);
     if (unassignedCount) {
-      logger.silly("Autobalancing...");
+      logger.debug("Autobalancing...");
       const getPlayerRating = Lobby.getPlayerRatingFunction(
         lobbyState.inhouseState.matchmakingSystem
       );
       await Lobby.autoBalanceTeams(getPlayerRating)(lobbyState);
-      logger.silly("Autobalancing... done");
+      logger.debug("Autobalancing... done");
     }
     lobbyState.firstPick = getRandomInt(2) + 1;
     lobbyState.radiantFaction = getRandomInt(2) + 1;
@@ -232,7 +232,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
   },
   async [CONSTANTS.STATE_WAITING_FOR_BOT](_lobbyState) {
     let lobbyState = { ..._lobbyState };
-    logger.silly(`STATE_WAITING_FOR_BOT ${lobbyState._id} ${lobbyState.botId}`);
+    logger.debug(`STATE_WAITING_FOR_BOT ${lobbyState._id} ${lobbyState.botId}`);
     if (lobbyState.botId == null) {
       // const bot = await Db.findUnassignedBot(lobbyState.inhouseState);
       let bot = await Db.findUnassignedBot();
@@ -251,7 +251,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
       }
 
       if (bot) {
-        logger.silly(`lobby run findUnassignedBot ${bot.steamId64}`);
+        logger.debug(`lobby run findUnassignedBot ${bot.steamId64}`);
         lobbyState.state = CONSTANTS.STATE_BOT_ASSIGNED;
         lobbyState = await Lobby.assignBotToLobby(lobbyState,bot._id);
       }
@@ -267,9 +267,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
       const dotaBot = await this.loadBotById(lobbyState.botId);
       if (dotaBot) {
         // check if bot is in another lobby already
-        if (
-          !dotaBot.dotaLobbyId 
-        ) {
+        if (dotaBot.dotaLobbyId && dotaBot.dotaLobbyId.isZero()) {
           // const tickets = await DotaBot.loadDotaBotTickets(dotaBot);
           // check if bot has ticket if needed
 
@@ -278,27 +276,28 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
             // leagueid: lobbyState.inhouseState.leagueid,
           };
           try {
-            const enterLobbyP =  DotaBot.createDotaBotLobby(lobbyOptions)(dotaBot);
+            const enterLobbyP = DotaBot.createDotaBotLobby(lobbyOptions)(
+              dotaBot
+            );
             const inLobby = await enterLobbyP;
             if (inLobby) {
               lobbyState.dotaLobbyId = dotaBot.dotaLobbyId.isZero()
                 ? null
                 : dotaBot.dotaLobbyId.toString();
-              logger.silly(
+              logger.debug(
                 `enterLobbyP dotaLobbyId: ${lobbyState.dotaLobbyId}`
               );
               lobbyState.state = CONSTANTS.STATE_BOT_STARTED;
               await Db.updateLobby(lobbyState);
-              logger.silly(
+              logger.debug(
                 `updateLobby done. ${lobbyState._id} ${lobbyState.state}`
               );
-              logger.silly(
+              logger.debug(
                 `STATE_BOT_ASSIGNED to STATE_BOT_STARTED ${lobbyState._id} ${lobbyState.state}`
               );
             } else {
               lobbyState.state = CONSTANTS.STATE_WAITING_FOR_BOT;
               lobbyState = await Lobby.unassignBotFromLobby(lobbyState);
-              
             }
           } catch (e) {
             logger.error(e);
@@ -306,16 +305,16 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
             lobbyState.state = CONSTANTS.STATE_BOT_FAILED;
             await Db.updateLobby(lobbyState);
             lobbyState = await Lobby.unassignBotFromLobby(lobbyState);
-            
           }
           return lobbyState;
         } else {
-          logger.silly(
+          logger.debug(
             `dotaLobbyId mismatch. lobbyState.dotaLobbyId ${lobbyState.dotaLobbyId} dotaBot.dotaLobbyId ${dotaBot.dotaLobbyId}`
           );
           lobbyState.state = CONSTANTS.STATE_WAITING_FOR_BOT;
           lobbyState = await Lobby.unassignBotFromLobby(lobbyState);
-          await Db.updateBotStatusBySteamId(CONSTANTS.BOT_IN_LOBBY,
+          await Db.updateBotStatusBySteamId(
+            CONSTANTS.BOT_IN_LOBBY,
             dotaBot.steamId64
           );
           // this[CONSTANTS.MSG_BOT_UNASSIGNED](lobbyState, "In another lobby.");
@@ -354,7 +353,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
     const dotaBot = this.getBot(lobbyState.botId);
     if (dotaBot) {
       if (DotaBot.isDotaLobbyReady(dotaBot.teamCache, dotaBot.playerState)) {
-        logger.silly("lobby run isDotaLobbyReady true");
+        logger.debug("lobby run isDotaLobbyReady true");
         return this.onStartDotaLobby(lobbyState, dotaBot);
       }
     } else {

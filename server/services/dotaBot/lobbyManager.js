@@ -76,15 +76,12 @@ class LobbyManager extends EventEmitter {
    * @async
    * @fires module:ihlManager~ready
    */
-   onClientReady() {
+  onClientReady() {
     // logger.debug(
     //   `ihlManager onClientReady logged in as ${this.client.user.tag}`
     // );
 
-
-    this.matchTracker = new MatchTracker.MatchTracker(
-      parseInt( 5000)
-    );
+    this.matchTracker = new MatchTracker.MatchTracker(parseInt(5000));
     this.matchTracker.on(CONSTANTS.EVENT_MATCH_STATS, (lobby) =>
       this[CONSTANTS.EVENT_MATCH_STATS](lobby).catch((e) => logger.error(e))
     );
@@ -107,11 +104,11 @@ class LobbyManager extends EventEmitter {
         lobbyState.inhouseState.readyCheckTimeout -
         Date.now()
     );
-    logger.silly(
-      `ihlManager registerLobbyTimeout ${lobbyState._id} ${lobbyState.readyCheckTime} ${lobbyState.inhouseState.readyCheckTimeout}. timeout ${delay}ms`
+    logger.debug(
+      `ihlManager registerLobbyTimeout ${lobbyState._id} ${lobbyState.readyCheckTime} ${lobbyState.readyCheckTimeout}. timeout ${delay}ms`
     );
     this.lobbyTimeoutTimers[lobbyState._id] = setTimeout(() => {
-      logger.silly(
+      logger.debug(
         `ihlManager registerLobbyTimeout ${lobbyState._id} timed out`
       );
       this.queueEvent(this.onLobbyTimedOut, [lobbyState]);
@@ -126,7 +123,7 @@ class LobbyManager extends EventEmitter {
    * @param {module:lobby.LobbyState} lobbyState - An inhouse lobby state.
    */
   unregisterLobbyTimeout(lobbyState) {
-    logger.silly(`ihlManager unregisterLobbyTimeout ${lobbyState._id}`);
+    logger.debug(`ihlManager unregisterLobbyTimeout ${lobbyState._id}`);
     if (this.lobbyTimeoutTimers[lobbyState._id]) {
       clearTimeout(this.lobbyTimeoutTimers[lobbyState._id]);
     }
@@ -140,8 +137,8 @@ class LobbyManager extends EventEmitter {
    * @param {string} status - Bot status.
    */
   async onSetBotStatus(steamId64, status) {
-    logger.silly(`ihlManager onSetBotStatus ${steamId64} ${status}`);
-    await Db.updateBot(steamId64, status );
+    logger.debug(`ihlManager onSetBotStatus ${steamId64} ${status}`);
+    await Db.updateBot(steamId64, status);
   }
 
   /**
@@ -152,17 +149,17 @@ class LobbyManager extends EventEmitter {
    * @param {string[]} states - A list of valid lobby states.
    */
   async runLobby(_lobbyState, states = []) {
-    logger.silly(
-      `ihlManager runLobby ${_lobbyState._id} ${_lobbyState.state} ${states.join(
-        ","
-      )}`
+    logger.debug(
+      `ihlManager runLobby ${_lobbyState._id} ${
+        _lobbyState.state
+      } ${states.join(",")}`
     );
     let lobbyState;
     try {
       assert.equal(this._runningLobby, false, "Already running a lobby.");
       this._runningLobby = true;
       const lobby = await Lobby.getLobby(_lobbyState);
-      logger.silly(`ihlManager runLobby lobby.state ${lobby.state}`);
+      logger.debug(`ihlManager runLobby lobby.state ${lobby.state}`);
       if (!states.length || states.indexOf(lobby.state) !== -1) {
         lobbyState = await Fp.pipeP(
           // Lobby.createLobbyState(_lobbyState.inhouseState)(_lobbyState),
@@ -176,7 +173,7 @@ class LobbyManager extends EventEmitter {
           // eslint-disable-next-line no-await-in-loop
           lobbyState = await this[beginState](lobbyState);
           endState = lobbyState.state;
-          logger.silly(
+          logger.debug(
             `runLobby ${lobbyState._id} ${beginState} to ${endState}`
           );
           this.emit(beginState, lobbyState); // test hook event
@@ -190,7 +187,7 @@ class LobbyManager extends EventEmitter {
     } catch (e) {
       logger.error(e);
       if (lobbyState) {
-        await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_FAILED);
+        await Db.updateLobbyState(lobbyState, CONSTANTS.STATE_FAILED);
       }
       process.exit(1);
     } finally {
@@ -205,9 +202,9 @@ class LobbyManager extends EventEmitter {
    * @param {string} state - The state to set the lobby to.
    */
   async onSetLobbyState(_lobbyState, state) {
-    logger.silly(`ihlManager onSetLobbyState ${_lobbyState._id} ${state}`);
+    logger.debug(`ihlManager onSetLobbyState ${_lobbyState._id} ${state}`);
     const lobbyState = { ..._lobbyState, state };
-    await Db.updateLobbyState(lobbyState,state);
+    await Db.updateLobbyState(lobbyState, state);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [state]).catch((e) =>
       logger.error(e)
     );
@@ -221,7 +218,7 @@ class LobbyManager extends EventEmitter {
     const lobbies = await Db.findAllLobbiesInState(
       CONSTANTS.STATE_WAITING_FOR_BOT
     );
-    logger.silly(`ihlManager onBotAvailable ${lobbies.length}`);
+    logger.debug(`ihlManager onBotAvailable ${lobbies.length}`);
     // const lobbyStates = await Fp.mapPromise(
     //   Ihl.loadLobbyState(this.client.guilds)
     // )(lobbies);
@@ -237,7 +234,7 @@ class LobbyManager extends EventEmitter {
    * @async
    */
   async onBotLobbyLeft(botId) {
-    await Db.updateBotStatus(CONSTANTS.BOT_IDLE,botId);
+    await Db.updateBotStatus(CONSTANTS.BOT_IDLE, botId);
     return this.onBotAvailable();
   }
 
@@ -248,7 +245,7 @@ class LobbyManager extends EventEmitter {
    * @param {module:lobby.LobbyState} lobbyState - An inhouse lobby state.
    */
   async onLobbyTimedOut(lobbyState) {
-    logger.silly(`ihlManager onLobbyTimedOut ${lobbyState._id}`);
+    logger.debug(`ihlManager onLobbyTimedOut ${lobbyState._id}`);
     delete this.lobbyTimeoutTimers[lobbyState._id];
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_CHECKING_READY,
@@ -263,7 +260,7 @@ class LobbyManager extends EventEmitter {
    * @param {module:db.User} user - An inhouse user.
    */
   async onPlayerReady(lobbyState, user) {
-    logger.silly(`ihlManager onPlayerReady ${lobbyState._id} ${user.id}`);
+    logger.debug(`ihlManager onPlayerReady ${lobbyState._id} ${user||"user"}`);
     await Lobby.setPlayerReady(true)(lobbyState)(user.id);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_CHECKING_READY,
@@ -272,7 +269,7 @@ class LobbyManager extends EventEmitter {
 
   async onStartDotaLobby(_lobbyState, _dotaBot) {
     const lobbyState = { ..._lobbyState };
-    logger.silly(
+    logger.debug(
       `ihlManager onStartDotaLobby ${lobbyState._id} ${lobbyState.botId} ${lobbyState.state}`
     );
     if (lobbyState.state !== CONSTANTS.STATE_WAITING_FOR_PLAYERS) return false;
@@ -281,8 +278,8 @@ class LobbyManager extends EventEmitter {
       lobbyState.state = CONSTANTS.STATE_MATCH_IN_PROGRESS;
       lobbyState.startedAt = Date.now();
       lobbyState.matchId = await DotaBot.startDotaLobby(dotaBot);
-      logger.silly(
-        `ihlManager onStartDotaLobby matchId ${lobbyState.matchId} leagueid ${lobbyState.leagueid}`
+      logger.debug(
+        `ihlManager onStartDotaLobby matchId ${lobbyState.matchId} leagueid `
       );
       if (lobbyState.leagueid) {
         await this.botLeaveLobby(lobbyState);
@@ -292,9 +289,9 @@ class LobbyManager extends EventEmitter {
       this.matchTracker.addLobby(lobbyState);
       this.matchTracker.run();
       // this[CONSTANTS.MSG_LOBBY_STARTED](lobbyState);
-      logger.silly("ihlManager onStartDotaLobby true");
+      logger.debug("ihlManager onStartDotaLobby true");
     }
-    logger.silly("ihlManager onStartDotaLobby false");
+    logger.debug("ihlManager onStartDotaLobby false");
     return lobbyState;
   }
 
@@ -317,8 +314,8 @@ class LobbyManager extends EventEmitter {
   // }
 
   async onLobbyKick(lobbyState, user) {
-    logger.silly(
-      `ihlManager onLobbyKick ${lobbyState._id} ${user.id} ${lobbyState.botId} ${user.steamId64}`
+    logger.debug(
+      `ihlManager onLobbyKick ${lobbyState._id} ${user} ${lobbyState.botId} ${user}`
     );
     const dotaBot = this.getBot(lobbyState.botId);
     if (dotaBot) {
@@ -333,8 +330,8 @@ class LobbyManager extends EventEmitter {
    * @param {module:db.User} user - The player to invite
    */
   async onLobbyInvite(lobbyState, user) {
-    logger.silly(
-      `ihlManager onLobbyInvite ${lobbyState._id} ${user.id} ${lobbyState.botId} ${user.steamId64}`
+    logger.debug(
+      `ihlManager onLobbyInvite ${lobbyState._id} ${user} ${lobbyState.botId} ${user}`
     );
     const dotaBot = this.getBot(lobbyState.botId);
     if (dotaBot) {
@@ -349,13 +346,13 @@ class LobbyManager extends EventEmitter {
    * @param {string} dotaLobbyId - A dota lobby id.
    */
   async onLobbyReady(dotaLobbyId) {
-    logger.silly(`ihlManager onLobbyReady ${dotaLobbyId}`);
+    logger.debug(`ihlManager onLobbyReady ${dotaLobbyId}`);
     // const lobbyState = await Ihl.loadLobbyStateFromDotaLobbyId(
     //   this.client.guilds
     // )(dotaLobbyId);
 
-    const lobbyState =  await Db.findLobbyByDotaLobbyId(dotaLobbyId);
-    logger.silly(
+    const lobbyState = await Db.findLobbyByDotaLobbyId(dotaLobbyId);
+    logger.debug(
       `ihlManager onLobbyReady ${lobbyState._id} ${lobbyState.lobbyName}`
     );
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
@@ -369,8 +366,8 @@ class LobbyManager extends EventEmitter {
    * @param {module:lobby.LobbyState} lobbyState - An inhouse lobby state.
    */
   async onLobbyKill(lobbyState) {
-    logger.silly(`ihlManager onLobbyKill ${lobbyState._id}`);
-    await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_PENDING_KILL);
+    logger.debug(`ihlManager onLobbyKill ${lobbyState._id}`);
+    await Db.updateLobbyState(lobbyState, CONSTANTS.STATE_PENDING_KILL);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_PENDING_KILL,
     ]).catch((e) => logger.error(e));
@@ -388,12 +385,12 @@ class LobbyManager extends EventEmitter {
     // );
     const lobbyState = await Db.findLobbyByMatchId(matchId.toString());
 
-    logger.silly(
+    logger.debug(
       `ihlManager onMatchSignedOut ${matchId} ${lobbyState._id} ${lobbyState.state}`
     );
     if (lobbyState.state === CONSTANTS.STATE_MATCH_IN_PROGRESS) {
-      await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_MATCH_ENDED);
-      logger.silly(
+      await Db.updateLobbyState(lobbyState, CONSTANTS.STATE_MATCH_ENDED);
+      logger.debug(
         "ihlManager onMatchSignedOut state set to STATE_MATCH_ENDED"
       );
       this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
@@ -419,12 +416,12 @@ class LobbyManager extends EventEmitter {
     //   this.client.guilds
     // )(dotaLobbyId);
     const lobbyState = await Db.findLobbyByDotaLobbyId(dotaLobbyId);
-    logger.silly(
+    logger.debug(
       `ihlManager onMatchOutcome ${dotaLobbyId} ${matchOutcome} ${lobbyState._id}`
     );
     await setMatchPlayerDetails(matchOutcome)(members)(lobbyState);
     // this[CONSTANTS.MSG_MATCH_STATS](lobbyState, lobbyState.inhouseState);
-    await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_MATCH_STATS);
+    await Db.updateLobbyState(lobbyState, CONSTANTS.STATE_MATCH_STATS);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_MATCH_STATS,
     ]).catch((e) => logger.error(e));
@@ -438,7 +435,7 @@ class LobbyManager extends EventEmitter {
    * @param {module:db.Lobby} lobby - A lobby database model
    */
   async onMatchStats(lobby) {
-    logger.silly(`ihlManager onMatchStats ${lobby._id}`);
+    logger.debug(`ihlManager onMatchStats ${lobby._id}`);
     // const league = await Db.findLeagueById(lobby.leagueId);
     // const inhouseState = await Ihl.createInhouseState({
     //   league,
@@ -446,7 +443,7 @@ class LobbyManager extends EventEmitter {
     // });
     // const lobbyState = await Lobby.lobbyToLobbyState(inhouseState)(lobby);
     // this[CONSTANTS.MSG_MATCH_STATS](lobbyState, inhouseState);
-    await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_MATCH_STATS);
+    await Db.updateLobbyState(lobbyState, CONSTANTS.STATE_MATCH_STATS);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_MATCH_STATS,
     ]).catch((e) => logger.error(e));
@@ -460,7 +457,7 @@ class LobbyManager extends EventEmitter {
    * @param {module:db.Lobby} lobby - A lobby database model
    */
   async onMatchNoStats(lobby) {
-    logger.silly(`ihlManager onMatchNoStats ${lobby._id}`);
+    logger.debug(`ihlManager onMatchNoStats ${lobby._id}`);
     const league = await Db.findLeagueById(lobby.leagueId);
     const inhouseState = await Ihl.createInhouseState({
       league,
@@ -468,10 +465,42 @@ class LobbyManager extends EventEmitter {
     });
     const lobbyState = await Lobby.lobbyToLobbyState(inhouseState)(lobby);
     this[CONSTANTS.MSG_MATCH_NO_STATS](lobbyState, inhouseState);
-    await Db.updateLobbyState(lobbyState,CONSTANTS.STATE_MATCH_NO_STATS);
+    await Db.updateLobbyState(lobbyState, CONSTANTS.STATE_MATCH_NO_STATS);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_MATCH_NO_STATS,
     ]).catch((e) => logger.error(e));
+  }
+
+  async processEventQueue() {
+    if (this.blocking) return;
+    if (this.eventQueue.length) {
+      this.blocking = true;
+      const [fn, args, resolve, reject] = this.eventQueue.shift();
+      logger.debug(
+        `ihlManager processEventQueue ${fn.name} ${this.eventQueue.length}`
+      );
+      try {
+        const value = await fn.apply(this, args);
+        resolve(value);
+      } catch (e) {
+        logger.error(e);
+        reject(e);
+      }
+      this.blocking = false;
+      if (this.eventQueue.length) {
+        await this.processEventQueue();
+      } else {
+        this.emit("empty"); // test hook event
+      }
+    }
+  }
+
+  async queueEvent(fn, args = []) {
+    logger.debug(`ihlManager queueEvent ${fn.name} ${args}`);
+    return new Promise((resolve, reject) => {
+      this.eventQueue.push([fn, args, resolve, reject]);
+      this.processEventQueue().catch((e) => logger.error(e) && process.exit(1));
+    }).timeout(10000);
   }
 
   /**
@@ -481,7 +510,7 @@ class LobbyManager extends EventEmitter {
    */
 
   getBot(botId) {
-    logger.silly(`ihlManager getBot ${botId}`);
+    logger.debug(`ihlManager getBot ${botId}`);
     return botId != null ? this.bots[botId] : null;
   }
 
@@ -491,7 +520,7 @@ class LobbyManager extends EventEmitter {
    * @returns {module:dotaBot.DotaBot}
    */
   getBotBySteamId(steamId64) {
-    logger.silly(`ihlManager getBotBySteamId ${steamId64}`);
+    logger.debug(`ihlManager getBotBySteamId ${steamId64}`);
     for (const dotaBot of Object.values(this.bots)) {
       if (dotaBot.steamId64 === steamId64) return dotaBot;
     }
@@ -505,7 +534,7 @@ class LobbyManager extends EventEmitter {
    * @returns {module:dotaBot.DotaBot}
    */
   async loadBotById(botId) {
-    logger.silly(`ihlManager loadBotById ${botId}`);
+    logger.debug(`ihlManager loadBotById ${botId}`);
     const bot = await Db.findBot(botId);
     return this.loadBot(bot);
   }
@@ -517,7 +546,7 @@ class LobbyManager extends EventEmitter {
    * @returns {module:dotaBot.DotaBot}
    */
   async loadBotBySteamId(steamId64) {
-    logger.silly(`ihlManager loadBotBySteamId ${steamId64}`);
+    logger.debug(`ihlManager loadBotBySteamId ${steamId64}`);
     const bot = await Db.findBotBySteamId64(steamId64);
     return this.loadBot(bot);
   }
@@ -530,10 +559,10 @@ class LobbyManager extends EventEmitter {
    */
 
   async loadBot(bot) {
-    logger.silly(`ihlManager loadBot ${bot._id}`);
+    logger.debug(`ihlManager loadBot ${bot._id}`);
     let dotaBot = this.getBot(bot._id);
     if (!dotaBot) {
-      await Db.updateBotStatus(CONSTANTS.BOT_LOADING,bot._id);
+      await Db.updateBotStatus(CONSTANTS.BOT_LOADING, bot._id);
       try {
         dotaBot = await Fp.pipeP(
           DotaBot.createDotaBot,
@@ -594,14 +623,14 @@ class LobbyManager extends EventEmitter {
         );
         this.bots[bot._id] = dotaBot;
         this.emit("bot-loaded", dotaBot); // test hook event
-        logger.silly("ihlManager loadBot loaded");
+        logger.debug("ihlManager loadBot loaded");
       } catch (e) {
         logger.error(e);
-        await Db.updateBotStatus(CONSTANTS.BOT_FAILED,bot._id);
+        await Db.updateBotStatus(CONSTANTS.BOT_FAILED, bot._id);
         return null;
       }
     }
-    logger.silly("ihlManager loadBot done");
+    logger.debug("ihlManager loadBot done");
     return dotaBot;
   }
 
@@ -611,16 +640,16 @@ class LobbyManager extends EventEmitter {
    * @param {number} botId - The bot id.
    */
   async removeBot(botId) {
-    logger.silly(`ihlManager removeBot ${botId}`);
+    logger.debug(`ihlManager removeBot ${botId}`);
     const dotaBot = this.getBot(botId);
     if (dotaBot) {
       try {
         delete this.bots[botId];
         await DotaBot.disconnectDotaBot(dotaBot);
-        logger.silly("ihlManager removeBot removed");
+        logger.debug("ihlManager removeBot removed");
       } catch (e) {
         logger.error(e);
-        await Db.updateBotStatus(CONSTANTS.BOT_FAILED,botId);
+        await Db.updateBotStatus(CONSTANTS.BOT_FAILED, botId);
       }
     }
   }
@@ -632,7 +661,7 @@ class LobbyManager extends EventEmitter {
    * @returns {null|string} Null if the bot left the lobby or a string containing the error reason.
    */
   async botLeaveLobby(lobbyState) {
-    logger.silly(
+    logger.debug(
       `ihlManager botLeaveLobby ${lobbyState._id} ${lobbyState.botId}`
     );
     if (!lobbyState.botId) return "No bot assigned to lobby.";
@@ -642,7 +671,7 @@ class LobbyManager extends EventEmitter {
         await dotaBot.leavePracticeLobby();
         await dotaBot.abandonCurrentGame();
         await dotaBot.leaveLobbyChat();
-        logger.silly(
+        logger.debug(
           `ihlManager botLeaveLobby bot ${lobbyState.botId} left lobby ${lobbyState.dotaLobbyId}`
         );
         return null;
@@ -663,7 +692,7 @@ class LobbyManager extends EventEmitter {
       lobbyState.botId &&
       DotaBot.validBotLobbyStates.indexOf(lobbyState.state) === -1
     ) {
-      logger.silly(
+      logger.debug(
         `validateLobbyStateBot invalid lobby state for bot detected. Bot ${lobbyState.botId} leaving lobbyState ${lobbyState._id} ${lobbyState.state}.`
       );
       await this.botLeaveLobby(lobbyState);
@@ -677,7 +706,7 @@ class LobbyManager extends EventEmitter {
    */
   attachListeners() {
     for (const eventName of Object.keys(CONSTANTS)) {
-      if (eventName.startsWith("EVENT_") ) {
+      if (eventName.startsWith("EVENT_")) {
         this.on(CONSTANTS[eventName], this[eventName].bind(this));
       }
     }

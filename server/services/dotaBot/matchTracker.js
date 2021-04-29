@@ -31,9 +31,9 @@ const updatePlayerRatings = async (lobbyState) => {
   const S2 = lobby.winner === 2 ? 1 : 0;
   const D1 = Math.round(calcEloChange(r1, r2, K, S1));
   const D2 = Math.round(calcEloChange(r2, r1, K, S2));
-  logger.silly(`updatePlayerRatings ${lobby.winner}`);
-  logger.silly(`updatePlayerRatings ${r1} ${S1} ${D1}`);
-  logger.silly(`updatePlayerRatings ${r2} ${S2} ${D2}`);
+  logger.debug(`updatePlayerRatings ${lobby.winner}`);
+  logger.debug(`updatePlayerRatings ${r1} ${S1} ${D1}`);
+  logger.debug(`updatePlayerRatings ${r2} ${S2} ${D2}`);
   return Fp.allPromise([
     faction1.map((player) =>
       Fp.allPromise([
@@ -70,7 +70,7 @@ CS: ${data.last_hits}/${data.denies}
 Gold: ${data.total_gold} (${data.gold_per_min}/min)`;
 
 const getOpenDotaMatchDetails = async (matchId) => {
-  logger.silly(`matchTracker getOpenDotaMatchDetails ${matchId}`);
+  logger.debug(`matchTracker getOpenDotaMatchDetails ${matchId}`);
   try {
     // const response = await got(
     //   `https://api.opendota.com/api/matches/${matchId}`,
@@ -88,9 +88,9 @@ const getOpenDotaMatchDetails = async (matchId) => {
 
 
 const setMatchDetails = async (lobbyOrState) => {
-  logger.silly(`matchTracker setMatchDetails matchId ${lobbyOrState.matchId}`);
+  logger.debug(`matchTracker setMatchDetails matchId ${lobbyOrState.matchId}`);
   let lobby = await Lobby.getLobby(lobbyOrState);
-  logger.silly(
+  logger.debug(
     `matchTracker setMatchDetails lobby.id ${lobby.id} ${lobby.matchId}`
   );
   if (!lobby.odotaData) {
@@ -166,10 +166,10 @@ const createMatchEndMessageEmbed = async (matchId) => {
   const direCaptainPlayer = captain1Data.isRadiant
     ? captain2Data
     : captain1Data;
-  logger.silly(
+  logger.debug(
     `createMatchEndMessageEmbed radiantName ${radiantCaptainPlayer.personaname}`
   );
-  logger.silly(
+  logger.debug(
     `createMatchEndMessageEmbed direName ${direCaptainPlayer.personaname}`
   );
   const radiantName = radiantCaptainPlayer.personaname;
@@ -291,7 +291,7 @@ class MatchTracker extends EventEmitter {
    * @fires module:ihlManager~EVENT_MATCH_STATS
    */
   async run() {
-    logger.silly(`matchTracker run ${this.blocking}`);
+    logger.debug(`matchTracker run ${this.blocking}`);
     if (this.blocking) return;
     if (this.enabled && this.lobbies.length) {
       this.blocking = true;
@@ -306,7 +306,7 @@ class MatchTracker extends EventEmitter {
           lobby.state === CONSTANTS.STATE_MATCH_IN_PROGRESS ||
           lobby.state === CONSTANTS.STATE_MATCH_ENDED
         ) {
-          logger.silly(`matchTracker no data, queueing ${lobby.id}`);
+          logger.debug(`matchTracker no data, queueing ${lobby.id}`);
           // startedAtExpiration is four hours before the current time
           // any match started before that is considered expired
           const startedAtExpiration = new Date();
@@ -319,7 +319,7 @@ class MatchTracker extends EventEmitter {
         }
 
         if (this.lobbies.length) {
-          logger.silly("matchTracker looping");
+          logger.debug("matchTracker looping");
           this.runTimer = setTimeout(() => this.run(), 1000);
         }
       } else {
@@ -335,7 +335,7 @@ class MatchTracker extends EventEmitter {
    * @async
    */
   enable() {
-    logger.silly("matchTracker start");
+    logger.debug("matchTracker start");
     this.enabled = true;
   }
 

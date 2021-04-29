@@ -1,8 +1,34 @@
 var dotaBotModel = require("../../models/dotaBot.model");
 var dotaLobbyModel = require("../../models/dotaLobby.model");
 var dotaLobbyPlayerModel = require("../../models/dotaLobbyPlayer.model");
+const util = require("util");
+
 const logger = require("./logger");
 const CONSTANTS = require("./constants");
+const { hri } = require("human-readable-ids");
+
+//***********TEST QUERY*************************************************************************************************************************************************************************** */
+//***********TEST QUERY*************************************************************************************************************************************************************************** */
+//***********TEST QUERY*************************************************************************************************************************************************************************** */
+
+module.exports.updateQuery = () =>
+  dotaLobbyModel.findOneAndUpdate(
+    { gameMode: "DOTA_GAMEMODE_1V1MID" },
+    {
+      botId: null,
+      state: "STATE_WAITING_FOR_QUEUE",
+      $pull: {
+        players: "76561198177128005",
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+//**************TEST QUERY************************************************************************************************************************************************************************ */
+//**************TEST QUERY************************************************************************************************************************************************************************ */
+//**************TEST QUERY************************************************************************************************************************************************************************ */
 
 //**********************************************************BOT MODEL***************************************************************************************************************************** */
 //**********************************************************BOT MODEL***************************************************************************************************************************** */
@@ -14,12 +40,20 @@ module.exports.findOrCreateBot = async (
   password
 ) => {
   try {
-    return await dotaBotModel.create({
+    let result = await dotaBotModel.create({
       steamId64,
       accountName,
       personaName,
       password,
     });
+
+    logger.debug(
+      `DB findOrCreateBot steamId64 ${steamId64} accountName ${accountName} personaName ${personaName} password ${password} --> ${util.inspect(
+        result._doc
+      )}`
+    );
+
+    return result._doc;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -28,17 +62,26 @@ module.exports.findOrCreateBot = async (
 
 module.exports.updateBotStatusBySteamId = async (status, steamId64) => {
   try {
-    return await dotaBotModel.findOneAndUpdate(
-      {
-        steamId64,
-      },
-      {
-        status,
-      },
-      {
-        new: true,
-      }
+    const result = await dotaBotModel
+      .findOneAndUpdate(
+        {
+          steamId64,
+        },
+        {
+          status,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB updateBotStatusBySteamId status ${status} steamId64 ${steamId64}  --> ${util.inspect(
+        result
+      )}`
     );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -47,17 +90,26 @@ module.exports.updateBotStatusBySteamId = async (status, steamId64) => {
 
 module.exports.updateBotStatus = async (status, _id) => {
   try {
-    return await dotaBotModel.findOneAndUpdate(
-      {
-        _id,
-      },
-      {
-        status,
-      },
-      {
-        new: true,
-      }
+    const result = await dotaBotModel
+      .findOneAndUpdate(
+        {
+          _id,
+        },
+        {
+          status,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB updateBotStatus status ${status} _id ${_id}  --> ${util.inspect(
+        result
+      )}`
     );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -66,9 +118,14 @@ module.exports.updateBotStatus = async (status, _id) => {
 
 module.exports.findBot = async (_id) => {
   try {
-    return await dotaBotModel.findOne({
-      _id,
-    });
+    const result = await dotaBotModel
+      .findOne({
+        _id,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(`DB findBot  _id ${_id}  --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -77,9 +134,18 @@ module.exports.findBot = async (_id) => {
 
 module.exports.findBotBySteamId64 = async (steamId64) => {
   try {
-    return await dotaBotModel.findOne({
-      steamId64,
-    });
+    const result = await dotaBotModel
+      .findOne({
+        steamId64,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB findBotBySteamId64 steamId64 ${steamId64}  --> ${util.inspect(
+        result
+      )}`
+    );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -88,14 +154,19 @@ module.exports.findBotBySteamId64 = async (steamId64) => {
 
 module.exports.findUnassignedBot = async () => {
   try {
-    return await dotaBotModel.findOne({
-      status: {
-        $in: [CONSTANTS.BOT_OFFLINE, CONSTANTS.BOT_IDLE],
-      },
-      lobbyCount: {
-        $lt: 5,
-      },
-    });
+    const result = await dotaBotModel
+      .findOne({
+        status: {
+          $in: [CONSTANTS.BOT_OFFLINE, CONSTANTS.BOT_IDLE],
+        },
+        lobbyCount: {
+          $lt: 5,
+        },
+      })
+      .lean(true)
+      .exec();
+    logger.debug(`DB findUnassignedBot   --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -104,30 +175,42 @@ module.exports.findUnassignedBot = async () => {
 
 module.exports.assignBotToLobby = async (lobby, botId) => {
   try {
-    await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobby._id,
-      },
-      {
-        botId,
-      },
-      {
-        new: true,
-      }
-    );
-    return await dotaBotModel.findOneAndUpdate(
-      {
-        _id: botId,
-      },
-      {
-        $inc: {
-          lobbyCount: 1,
+    await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobby._id,
         },
-      },
-      {
-        new: true,
-      }
+        {
+          botId,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    const result = await dotaBotModel
+      .findOneAndUpdate(
+        {
+          _id: botId,
+        },
+        {
+          $inc: {
+            lobbyCount: 1,
+          },
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB assignBotToLobby lobby ${lobby} botId ${botId}  --> ${util.inspect(
+        result
+      )}`
     );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -136,7 +219,7 @@ module.exports.assignBotToLobby = async (lobby, botId) => {
 
 module.exports.setAllBotsOffline = async () => {
   try {
-    return await dotaBotModel.updateMany(
+    const result = await dotaBotModel.updateMany(
       {
         status: {
           $ne: CONSTANTS.BOT_OFFLINE,
@@ -146,23 +229,34 @@ module.exports.setAllBotsOffline = async () => {
         status: CONSTANTS.BOT_OFFLINE,
       }
     );
+    logger.debug(`DB setAllBotsOffline  --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
   }
 };
 
-module.exports.updateBot = async (steamId64) => async (values) => {
+module.exports.updateBot = async (steamId64, values) => {
   try {
-    return await dotaBotModel.findOneAndUpdate(
-      {
-        steamId64,
-      },
-      values,
-      {
-        new: true,
-      }
+    const result = await dotaBotModel
+      .findOneAndUpdate(
+        {
+          steamId64,
+        },
+        values,
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB updateBot values ${util.inspect(
+        values
+      )} steamId64 ${steamId64}  --> ${util.inspect(result)}`
     );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -171,9 +265,15 @@ module.exports.updateBot = async (steamId64) => async (values) => {
 
 module.exports.destroyBotBySteamID64 = async (steamId64) => {
   try {
-    return await dotaBotModel.findOneAndDelete({
+    const result = await dotaBotModel.findOneAndDelete({
       steamId64,
     });
+    logger.debug(
+      `DB destroyBotBySteamID64  steamId64 ${steamId64}  --> ${util.inspect(
+        result
+      )}`
+    );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -186,16 +286,21 @@ module.exports.destroyBotBySteamID64 = async (steamId64) => {
 
 module.exports.findAllActiveLobbies = async () => {
   try {
-    return await dotaLobbyModel.find({
-      state: {
-        $nin: [
-          CONSTANTS.STATE_COMPLETED,
-          CONSTANTS.STATE_COMPLETED_NO_STATS,
-          CONSTANTS.STATE_KILLED,
-          CONSTANTS.STATE_FAILED,
-        ],
-      },
-    });
+    const result = await dotaLobbyModel
+      .find({
+        state: {
+          $nin: [
+            CONSTANTS.STATE_COMPLETED,
+            CONSTANTS.STATE_COMPLETED_NO_STATS,
+            CONSTANTS.STATE_KILLED,
+            CONSTANTS.STATE_FAILED,
+          ],
+        },
+      })
+      .lean(true)
+      .exec();
+    logger.debug(`DB findAllActiveLobbies  --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -204,17 +309,26 @@ module.exports.findAllActiveLobbies = async () => {
 
 module.exports.findActiveLobbiesForUser = async (userId) => {
   try {
-    return await dotaLobbyModel.find({
-      state: {
-        $nin: [
-          CONSTANTS.STATE_COMPLETED,
-          CONSTANTS.STATE_COMPLETED_NO_STATS,
-          CONSTANTS.STATE_KILLED,
-          CONSTANTS.STATE_FAILED,
-        ],
+    const result = await dotaLobbyModel
+      .find({
+        state: {
+          $nin: [
+            CONSTANTS.STATE_COMPLETED,
+            CONSTANTS.STATE_COMPLETED_NO_STATS,
+            CONSTANTS.STATE_KILLED,
+            CONSTANTS.STATE_FAILED,
+          ],
+        },
         players: userId,
-      },
-    });
+      })
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB findActiveLobbiesForUser userId ${userId}  --> ${util.inspect(
+        result
+      )}`
+    );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -223,9 +337,14 @@ module.exports.findActiveLobbiesForUser = async (userId) => {
 
 module.exports.findPendingLobby = async () => {
   try {
-    return await dotaLobbyModel.findOne({
-      state: CONSTANTS.STATE_WAITING_FOR_QUEUE,
-    });
+    const result = await dotaLobbyModel
+      .findOne({
+        state: CONSTANTS.STATE_WAITING_FOR_QUEUE,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(`DB findPendingLobby  --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -234,9 +353,14 @@ module.exports.findPendingLobby = async () => {
 
 module.exports.findAllInProgressLobbies = async () => {
   try {
-    return await dotaLobbyModel.find({
-      state: CONSTANTS.STATE_MATCH_IN_PROGRESS,
-    });
+    const result = await dotaLobbyModel
+      .find({
+        state: CONSTANTS.STATE_MATCH_IN_PROGRESS,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(`DB findAllInProgressLobbies  --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -245,9 +369,16 @@ module.exports.findAllInProgressLobbies = async () => {
 
 module.exports.findLobbyByName = async (lobbyName) => {
   try {
-    return await dotaLobbyModel.findOne({
-      lobbyName,
-    });
+    const result = await dotaLobbyModel
+      .findOne({
+        lobbyName,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB findLobbyByName lobbyName ${lobbyName}  --> ${util.inspect(result)}`
+    );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -256,23 +387,32 @@ module.exports.findLobbyByName = async (lobbyName) => {
 
 module.exports.findLobbyByMatchId = async (matchId) => {
   try {
-    return await dotaLobbyModel.findOne({
-      matchId,
-    });
+    const result = await dotaLobbyModel
+      .findOne({
+        matchId,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB findLobbyByMatchId matchId ${matchId}   --> ${util.inspect(result)}`
+    );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
   }
 };
 
-module.exports.findOrCreateLobby = async ( player) => {
+module.exports.findOrCreateLobby = async (player) => {
   try {
-    return await dotaLobbyModel.create({
+    let result = await dotaLobbyModel.create({
       state: CONSTANTS.STATE_WAITING_FOR_QUEUE,
       password: hri.random(),
       // lobbyName,
       players: [player],
     });
+
+    return result._doc;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -281,9 +421,18 @@ module.exports.findOrCreateLobby = async ( player) => {
 
 module.exports.findLobbyByDotaLobbyId = async (dotaLobbyId) => {
   try {
-    return await dotaLobbyModel.findOne({
-      dotaLobbyId,
-    });
+    const result = await dotaLobbyModel
+      .findOne({
+        dotaLobbyId,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB findLobbyByDotaLobbyId dotaLobbyId ${dotaLobbyId}   --> ${util.inspect(
+        result
+      )}`
+    );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -292,9 +441,14 @@ module.exports.findLobbyByDotaLobbyId = async (dotaLobbyId) => {
 
 module.exports.findLobbyById = async (_id) => {
   try {
-    return await dotaLobbyModel.findOne({
-      _id,
-    });
+    const result = await dotaLobbyModel
+      .findOne({
+        _id,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(`DB findLobbyById _id ${_id}   --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -303,53 +457,69 @@ module.exports.findLobbyById = async (_id) => {
 
 module.exports.unassignBotFromLobby = async (lobby, botId) => {
   try {
-    await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobby._id,
-      },
-      {
-        botId: null,
-        dotaLobbyId: null,
-      },
-      {
-        new: true,
-      }
-    );
-
-    return await dotaBotModel.findOneAndUpdate(
-      {
-        _id: botId,
-      },
-      {
-        $inc: {
-          lobbyCount: -1,
+    await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobby._id,
         },
-      },
-      {
-        new: true,
-      }
+        {
+          botId: null,
+          dotaLobbyId: null,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+
+    const result = await dotaBotModel
+      .findOneAndUpdate(
+        {
+          _id: botId,
+        },
+        {
+          $inc: {
+            lobbyCount: -1,
+          },
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB unassignBotFromLobby lobby ${lobby} botId ${botId}  --> ${util.inspect(
+        result
+      )}`
     );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
   }
 };
 
-
-
-
 module.exports.updateLobbyState = async (lobbyOrState, state) => {
   try {
-    const result = await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState._id,
-      },
-      {
-        state,
-      },
-      {
-        new: true,
-      }
+    const result = await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobbyOrState._id,
+        },
+        {
+          state,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+
+    logger.debug(
+      `DB updateLobbyState  state ${state} --> ${util.inspect(result)}`
     );
 
     // cache.Lobbies.delete(lobbyOrState.id);
@@ -362,18 +532,24 @@ module.exports.updateLobbyState = async (lobbyOrState, state) => {
 
 module.exports.updateLobbyName = async (lobbyOrState, lobbyName) => {
   try {
-    const result = await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState._id,
-      },
-      {
-        lobbyName,
-      },
-      {
-        new: true,
-      }
-    );
+    const result = await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobbyOrState._id,
+        },
+        {
+          lobbyName,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
 
+    logger.debug(
+      `DB updateLobbyName  lobbyName ${lobbyName} --> ${util.inspect(result)}`
+    );
     // cache.Lobbies.delete(lobbyOrState.id);
     return result;
   } catch (err) {
@@ -384,16 +560,22 @@ module.exports.updateLobbyName = async (lobbyOrState, lobbyName) => {
 
 module.exports.updateLobbyChannel = async (lobbyOrState, channel) => {
   try {
-    const result = await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState.id,
-      },
-      {
-        channel,
-      },
-      {
-        new: true,
-      }
+    const result = await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobbyOrState.id,
+        },
+        {
+          channel,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB updateLobbyChannel  channel ${channel} --> ${util.inspect(result)}`
     );
 
     // cache.Lobbies.delete(lobbyOrState.id);
@@ -404,40 +586,50 @@ module.exports.updateLobbyChannel = async (lobbyOrState, channel) => {
   }
 };
 
-module.exports.updateLobbyState = async (lobbyOrState, state) => {
-  try {
-    const result = await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState._id,
-      },
-      {
-        state,
-      },
-      {
-        new: true,
-      }
-    );
+// module.exports.updateLobbyState = async (lobbyOrState, state) => {
+//   try {
+//     const result = await dotaLobbyModel
+//       .findOneAndUpdate(
+//         {
+//           _id: lobbyOrState._id,
+//         },
+//         {
+//           state,
+//         },
+//         {
+//           new: true,
+//         }
+//       )
+//       .lean(true)
+//       .exec();
 
-    // cache.Lobbies.delete(lobbyOrState.id);
-    return result;
-  } catch (err) {
-    logger.error(err);
-    throw err.message;
-  }
-};
+//     // cache.Lobbies.delete(lobbyOrState.id);
+//     return result;
+//   } catch (err) {
+//     logger.error(err);
+//     throw err.message;
+//   }
+// };
 
 module.exports.updateLobbyWinner = async (lobbyOrState, winner) => {
   try {
-    const result = await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState._id,
-      },
-      {
-        winner,
-      },
-      {
-        new: true,
-      }
+    const result = await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobbyOrState._id,
+        },
+        {
+          winner,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+
+    logger.debug(
+      `DB updateLobbyWinner  winner ${winner} --> ${util.inspect(result)}`
     );
 
     // cache.Lobbies.delete(lobbyOrState.id);
@@ -450,18 +642,24 @@ module.exports.updateLobbyWinner = async (lobbyOrState, winner) => {
 
 module.exports.updateLobby = async (lobbyOrState) => {
   try {
-    const result = await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState._id,
-      },
-      {
-        lobbyOrState,
-      },
-      {
-        new: true,
-      }
-    );
+    const { _id, ...rest } = lobbyOrState;
+    const result = await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id,
+        },
 
+        rest,
+
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB updateLobby  --> ${util.inspect(result)}`
+    );
     // cache.Lobbies.delete(lobbyOrState.id);
     return result;
   } catch (err) {
@@ -472,19 +670,22 @@ module.exports.updateLobby = async (lobbyOrState) => {
 
 module.exports.updateLobbyFailed = async (lobbyOrState, failReason) => {
   try {
-    const result = await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState._id,
-      },
-      {
-        state: CONSTANTS.STATE_FAILED,
-        failReason,
-      },
-      {
-        new: true,
-      }
-    );
-
+    const result = await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobbyOrState._id,
+        },
+        {
+          state: CONSTANTS.STATE_FAILED,
+          failReason,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(`DB updateLobbyFailed --> ${util.inspect(result)}`);
     // cache.Lobbies.delete(lobbyOrState.id);
     return result;
   } catch (err) {
@@ -495,9 +696,14 @@ module.exports.updateLobbyFailed = async (lobbyOrState, failReason) => {
 
 module.exports.findAllMatchEndedLobbies = async () => {
   try {
-    return await dotaLobbyModel.find({
-      state: CONSTANTS.STATE_MATCH_ENDED,
-    });
+    const result = await dotaLobbyModel
+      .find({
+        state: CONSTANTS.STATE_MATCH_ENDED,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(`DB findAllMatchEndedLobbies  --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -506,9 +712,16 @@ module.exports.findAllMatchEndedLobbies = async () => {
 
 module.exports.findAllLobbiesInState = async (state) => {
   try {
-    return await dotaLobbyModel.find({
-      state,
-    });
+    const result = await dotaLobbyModel
+      .find({
+        state,
+      })
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB findAllLobbiesInState state ${state}  --> ${util.inspect(result)}`
+    );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -525,7 +738,13 @@ module.exports.getLobbyPlayers = async (lobbyOrState, options) => {
       : {
           _id: lobbyOrState._id,
         };
-    return await dotaLobbyModel.findOne(condition).select("players");
+    const result = await dotaLobbyModel
+      .findOne(condition)
+      .select("players")
+      .lean(true)
+      .exec();
+    logger.debug(`DB getLobbyPlayers    --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -534,19 +753,24 @@ module.exports.getLobbyPlayers = async (lobbyOrState, options) => {
 
 module.exports.addPlayer = async (lobbyOrState, player) => {
   try {
-    return await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState._id,
-      },
-      {
-        $push: {
-          players: player,
+    const result = await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobbyOrState._id,
         },
-      },
-      {
-        new: true,
-      }
-    );
+        {
+          $push: {
+            players: player,
+          },
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(`DB addPlayer  player ${player}  --> ${util.inspect(result)}`);
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
@@ -555,30 +779,39 @@ module.exports.addPlayer = async (lobbyOrState, player) => {
 
 module.exports.removePlayer = async (lobbyOrState, player) => {
   try {
-    return await dotaLobbyModel.findOneAndUpdate(
-      {
-        _id: lobbyOrState._id,
-      },
-      {
-        $pull: {
-          players: player,
+    const result = await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobbyOrState._id,
         },
-      },
-      {
-        new: true,
-      }
+        {
+          $pull: {
+            players: player,
+          },
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB removePlayer  player ${player}  --> ${util.inspect(result)}`
     );
+    return result;
   } catch (err) {
     logger.error(err);
     throw err.message;
   }
 };
 
-module.exports.findOrCreateLobbyPlayer=async(lobbyPlayer)=>{
-try {
-  return await dotaLobbyPlayerModel.create(lobbyPlayer);
-} catch (err) {
-  logger.error(err);
-  throw err.message;
-}
-}
+module.exports.findOrCreateLobbyPlayer = async (lobbyPlayer) => {
+  try {
+    let result = await dotaLobbyPlayerModel.create(lobbyPlayer);
+
+    return result._doc;
+  } catch (err) {
+    logger.error(err);
+    throw err.message;
+  }
+};

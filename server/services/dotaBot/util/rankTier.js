@@ -24,11 +24,11 @@ const RANK_TO_MEDAL = {
  * @memberof module:rankTier
  */
 const rankTierToMedalName = (_rankTier) => {
-    logger.silly(`rankTierToMedalName ${_rankTier}`);
+    logger.debug(`rankTierToMedalName ${_rankTier}`);
     const rankTier = _rankTier || 0;
     const rank = Math.floor(rankTier / 10) * 10;
     const tier = rankTier % 10;
-    logger.silly(`rankTierToMedalName ${rank} ${tier}`);
+    logger.debug(`rankTierToMedalName ${rank} ${tier}`);
     let medal = 'Unknown';
     if (rank >= 0 && rank < 90) {
         medal = `${RANK_TO_MEDAL[rank]}`;

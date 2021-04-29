@@ -26,7 +26,7 @@ const EventListeners = ({ Db }) => ({
       (lobby.state === CONSTANTS.STATE_BOT_STARTED ||
         lobby.state === CONSTANTS.STATE_WAITING_FOR_PLAYERS)
     ) {
-      logger.silly(
+      logger.debug(
         `EVENT_GUILD_MESSAGE {msg.member.displayName}: ${msg.content}`
       );
       const dotaBot = this.getBot(lobby.botId);

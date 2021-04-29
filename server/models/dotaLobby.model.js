@@ -1,6 +1,5 @@
 let mongoose = require("mongoose");
 let Schema = mongoose.Schema;
-const paginate = require("mongoose-paginate-v2");
 
 let dotalobby = new Schema({
   // queueType: {
@@ -81,7 +80,7 @@ let dotalobby = new Schema({
     // unique: true,
   },
 
-  players: [String],
+  players: [{ type: String }],
 
   // *****************************************//
   //   name: { type: String, required: true },
@@ -106,6 +105,5 @@ let dotalobby = new Schema({
   updatedOn: { type: Date, default: Date.now },
 });
 
-dotalobby.plugin(paginate);
 
 module.exports = mongoose.model("dotalobby", dotalobby);

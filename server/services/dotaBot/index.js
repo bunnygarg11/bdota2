@@ -5,4 +5,5 @@ module.exports = {
   lobbyManager,
   CONSTANTS: require("./constants"),
   Lobby: require("./lobby"),
+  logger:require("./logger")
 };
