@@ -429,12 +429,14 @@ class DotaBot extends EventEmitter {
             } leaving lobby...`
           );
           return null;
-        } else if (lobbyState.botId !== this.config._id) {
+        } else if (lobbyState.botId !== this.config._id.toString()) {
           logger.debug(
             `DotaBot practiceLobbyUpdate lobbyState.botId ${
               lobbyState.botId
             } mismatch. Bot ${this.config._id || "id"} leaving lobby...`
           );
+
+          // return null
         } else if (validBotLobbyStates.indexOf(lobbyState.state) === -1) {
           logger.debug(
             `DotaBot practiceLobbyUpdate lobbyState.state ${

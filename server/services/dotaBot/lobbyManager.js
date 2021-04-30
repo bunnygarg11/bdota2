@@ -222,7 +222,7 @@ class LobbyManager extends EventEmitter {
     // const lobbyStates = await Fp.mapPromise(
     //   Ihl.loadLobbyState(this.client.guilds)
     // )(lobbies);
-    lobbyStates.forEach((lobbyState) =>
+    lobbies.forEach((lobbyState) =>
       this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
         CONSTANTS.STATE_WAITING_FOR_BOT,
       ]).catch((e) => logger.error(e))
