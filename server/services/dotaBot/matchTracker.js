@@ -116,7 +116,7 @@ const setMatchPlayerDetails = async (_lobby) => {
   for (const playerData of lobby.odotaData.players) {
     if (playerData.account_id) {
       const steamId64 = convertor.to64(playerData.account_id);
-      const player = players.find((p) => p.steamId64 === steamId64);
+      const player = players.find((p) => p == steamId64);
       if (player) {
         const data = {
           win: playerData.win,
@@ -128,15 +128,15 @@ const setMatchPlayerDetails = async (_lobby) => {
           gpm: playerData.gold_per_min,
           xpm: playerData.xp_per_min,
         };
-        if (player.id === lobby.captain1UserId) {
+        // if (player.id === lobby.captain1UserId) {
           if (playerData.win === 1) {
             winner = 1;
           }
-        } else if (player.id === lobby.captain2UserId) {
-          if (playerData.win === 1) {
-            winner = 2;
-          }
-        }
+        // } else if (player.id === lobby.captain2UserId) {
+          // if (playerData.win === 1) {
+            // winner = 2;
+          // }
+        // }
         tasks.push(Lobby.updateLobbyPlayerBySteamId(data,_lobby,steamId64));
       }
     }
@@ -298,7 +298,7 @@ class MatchTracker extends EventEmitter {
       const data = this.lobbies.shift();
       if (!data.lastCheck || data.lastCheck < Date.now() - this.interval) {
         data.lastCheck = Date.now();
-        const lobby = await setMatchDetails(data.lobby);
+        const lobby = await setMatchDetails(data);
         if (lobby.odotaData) {
           await setMatchPlayerDetails(lobby);
           this.emit(CONSTANTS.EVENT_MATCH_STATS, lobby);

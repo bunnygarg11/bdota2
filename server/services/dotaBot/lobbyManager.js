@@ -25,17 +25,17 @@ const setMatchPlayerDetails = (matchOutcome) => (members) => async (_lobby) => {
   const tasks = [];
   for (const playerData of members) {
     const steamId64 = playerData.id.toString();
-    const player = players.find((p) => p.steamId64 === steamId64);
+    const player = players.find((p) => p== steamId64);
     if (player) {
       const data = {
-        win: 0,
-        lose: 0,
+        // win: 0,
+        // lose: 0,
         heroId: playerData.hero_id,
-        kills: 0,
-        deaths: 0,
-        assists: 0,
-        gpm: 0,
-        xpm: 0,
+        // kills: 0,
+        // deaths: 0,
+        // assists: 0,
+        // gpm: 0,
+        // xpm: 0,
       };
       if (
         (playerData.team === Dota2.schema.DOTA_GC_TEAM.DOTA_GC_TEAM_GOOD_GUYS &&
@@ -46,15 +46,15 @@ const setMatchPlayerDetails = (matchOutcome) => (members) => async (_lobby) => {
             Dota2.schema.EMatchOutcome.k_EMatchOutcome_DireVictory)
       ) {
         data.win = 1;
-        winner = player.LobbyPlayer.faction;
+        // winner = player.LobbyPlayer.faction;
       } else {
         data.lose = 1;
       }
-      tasks.push(Lobby.updateLobbyPlayerBySteamId(data)(_lobby)(steamId64));
+      tasks.push(Lobby.updateLobbyPlayerBySteamId(data,_lobby,steamId64));
     }
   }
   await Fp.allPromise(tasks);
-  await Db.updateLobbyWinner(lobby,winner);
+  // await Db.updateLobbyWinner(lobby,winner);
 };
 
 class LobbyManager extends EventEmitter {
@@ -239,7 +239,7 @@ class LobbyManager extends EventEmitter {
   }
 
   /**
-   * Runs a lobby state when its ready up timer has expired.
+   * Runs a lobby state when its ready up timer has exihlManager queueEventpired.
    * Checks for STATE_CHECKING_READY lobby state
    * @async
    * @param {module:lobby.LobbyState} lobbyState - An inhouse lobby state.
@@ -260,7 +260,9 @@ class LobbyManager extends EventEmitter {
    * @param {module:db.User} user - An inhouse user.
    */
   async onPlayerReady(lobbyState, user) {
-    logger.debug(`ihlManager onPlayerReady ${lobbyState._id} ${user||"user"}`);
+    logger.debug(
+      `ihlManager onPlayerReady ${lobbyState._id} ${user || "user"}`
+    );
     await Lobby.setPlayerReady(true)(lobbyState)(user.id);
     this[CONSTANTS.EVENT_RUN_LOBBY](lobbyState, [
       CONSTANTS.STATE_CHECKING_READY,

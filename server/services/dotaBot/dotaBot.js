@@ -65,7 +65,7 @@ const isDotaLobbyReady = (teamCache, playerState) => {
   if (
     !teamCache.length ||
     !Object.keys(playerState).length ||
-    teamCache.length !== Object.keys(playerState).length
+    teamCache.length != Object.keys(playerState).length
   )
     return false;
   return true;
@@ -317,6 +317,11 @@ const joinDotaBotLobby = ({
 const startDotaLobby = async (dotaBot) => {
   const lobbyData = await dotaBot.launchPracticeLobby();
   await dotaBot.leaveLobbyChat();
+  logger.debug(
+    `dota bot startDotaLobby matchId ${
+      lobbyData && lobbyData.match_id && lobbyData.match_id.toString()
+    }`
+  );
   return lobbyData.match_id.toString();
 };
 
@@ -429,7 +434,7 @@ class DotaBot extends EventEmitter {
             } leaving lobby...`
           );
           return null;
-        } else if (lobbyState.botId !== this.config._id.toString()) {
+        } else if (lobbyState.botId != this.config._id.toString()) {
           logger.debug(
             `DotaBot practiceLobbyUpdate lobbyState.botId ${
               lobbyState.botId
@@ -451,8 +456,9 @@ class DotaBot extends EventEmitter {
           .catch((e) => logger.error(e));
       });
     });
-    this.Dota2.on("practiceLobbyCleared", () =>
-      this.emit(CONSTANTS.EVENT_BOT_LOBBY_LEFT)
+    this.Dota2.on("practiceLobbyCleared", () =>{
+    logger.debug(`dotaBot practiceLobbyCleared emitted`);
+      return this.emit(CONSTANTS.EVENT_BOT_LOBBY_LEFT)}
     );
     this.Dota2.on("matchSignedOut", (matchId) =>
       this.emit(CONSTANTS.EVENT_MATCH_SIGNEDOUT, matchId)
@@ -812,14 +818,14 @@ class DotaBot extends EventEmitter {
       logger.debug(
         `DotaBot processLobbyUpdate member left ${member.id || "member.id"}`
       );
-      this.emit(CONSTANTS.MSG_LOBBY_PLAYER_LEFT, member);
+      // this.emit(CONSTANTS.MSG_LOBBY_PLAYER_LEFT, member);
     }
 
     for (const member of members.joined) {
       logger.debug(
         `DotaBot processLobbyUpdate member joined ${member.id || "member.id"} `
       );
-      this.emit(CONSTANTS.MSG_LOBBY_PLAYER_JOINED, member);
+      // this.emit(CONSTANTS.MSG_LOBBY_PLAYER_JOINED, member);
     }
 
     // for (const memberState of members.changedSlot) {

@@ -336,7 +336,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
     logger.debug(
       `lobby run STATE_BOT_STARTED lobbyState ${util.inspect(
         lobbyState
-      )} dotaBot ${util.inspect(dotaBot)}${util.inspect(players)} `
+      )} players ${util.inspect(players)} `
     );
     // dotaBot.teamCache = players.reduce(
     //   Lobby.reducePlayerToTeamCache(lobbyState.radiantFaction),

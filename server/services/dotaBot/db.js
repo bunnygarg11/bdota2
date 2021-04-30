@@ -26,6 +26,40 @@ module.exports.updateQuery = () =>
     }
   );
 
+module.exports.testFindAllActiveLobbies = () =>
+  dotaLobbyModel
+    .find({
+      state: {
+        $in: [
+          "STATE_BOT_ASSIGNED",
+          "STATE_BOT_CREATED",
+          "STATE_BOT_CONNECTED",
+          "STATE_WAITING_FOR_PLAYERS",
+          "STATE_MATCH_IN_PROGRESS",
+          "STATE_WAITING_FOR_BOT",
+        ],
+      },
+    })
+    .lean(true)
+    .exec();
+
+module.exports.testFindActiveBots = () =>
+  dotaBotModel
+    .find({
+      status: {
+        $in: [
+          "BOT_LOADING",
+          "BOT_ONLINE",
+          "BOT_IDLE",
+          "BOT_IN_LOBBY",
+          "BOT_OFFLINE",
+          "BOT_FAILED",
+        ],
+      },
+    })
+    .lean(true)
+    .exec();
+
 //**************TEST QUERY************************************************************************************************************************************************************************ */
 //**************TEST QUERY************************************************************************************************************************************************************************ */
 //**************TEST QUERY************************************************************************************************************************************************************************ */
@@ -657,9 +691,7 @@ module.exports.updateLobby = async (lobbyOrState) => {
       )
       .lean(true)
       .exec();
-    logger.debug(
-      `DB updateLobby  --> ${util.inspect(result)}`
-    );
+    logger.debug(`DB updateLobby  --> ${util.inspect(result)}`);
     // cache.Lobbies.delete(lobbyOrState.id);
     return result;
   } catch (err) {
@@ -807,7 +839,23 @@ module.exports.removePlayer = async (lobbyOrState, player) => {
 
 module.exports.findOrCreateLobbyPlayer = async (lobbyPlayer) => {
   try {
-    let result = await dotaLobbyPlayerModel.create(lobbyPlayer);
+    let result = await dotaLobbyPlayerModel
+      .findOneAndUpdate(
+        {
+          lobbyId: lobbyPlayer.lobbyId,
+          steamId64: lobbyPlayer.steamId64,
+        },
+        lobbyPlayer,
+        { new: true }
+      )
+      .lean(true)
+      .exec();
+
+    if (result) {
+      return result;
+    }
+
+    result = await dotaLobbyPlayerModel.create(lobbyPlayer);
 
     return result._doc;
   } catch (err) {
