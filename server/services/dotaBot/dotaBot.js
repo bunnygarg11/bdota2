@@ -62,6 +62,12 @@ const isDotaLobbyReady = (teamCache, playerState) => {
   // }
   // return true;
 
+  logger.debug(
+    `dotaBot isDotaLobbyReady teamCache ${util.inspect(
+      teamCache
+    )} playerState ${util.inspect(playerState)} `
+  );
+
   if (
     !teamCache.length ||
     !Object.keys(playerState).length ||
@@ -167,6 +173,7 @@ const membersToPlayerState = (members) => {
   for (const member of members) {
     playerState[member.id.toString()] = slotToTeam(member.team);
   }
+  logger.debug(`membersToPlayerState playerState ${util.inspect(playerState)}`);
   return playerState;
 };
 
@@ -176,6 +183,12 @@ const processMembers = (oldMembers = [], newMembers = []) => {
     joined: diffMembers(newMembers, oldMembers),
     changedSlot: [],
   };
+
+  logger.debug(
+    `dotabot processMembers oldMembers ${util.inspect(
+      oldMembers
+    )} newMembers${util.inspect(newMembers)} members ${util.inspect(members)} `
+  );
 
   // for (const oldMember of oldMembers) {
   //   const newMember = newMembers.find(
@@ -407,7 +420,9 @@ class DotaBot extends EventEmitter {
     this.Dota2.on("practiceLobbyUpdate", (lobby) => {
       logger.debug("DotaBot practiceLobbyUpdate");
       logger.debug(
-        `DotaBot practiceLobbyUpdate this.lobby  ${util.inspect(this.lobby)} `
+        `DotaBot practiceLobbyUpdate this.lobby  ${util.inspect(
+          this.lobby
+        )}  lobby ${util.inspect(lobby)}  this.teamCache ${util.inspect(this.teamCache)} `
       );
       if (this.lobby) this.processLobbyUpdate(this.lobby, lobby);
       if (
@@ -456,10 +471,10 @@ class DotaBot extends EventEmitter {
           .catch((e) => logger.error(e));
       });
     });
-    this.Dota2.on("practiceLobbyCleared", () =>{
-    logger.debug(`dotaBot practiceLobbyCleared emitted`);
-      return this.emit(CONSTANTS.EVENT_BOT_LOBBY_LEFT)}
-    );
+    this.Dota2.on("practiceLobbyCleared", () => {
+      logger.debug(`dotaBot practiceLobbyCleared emitted`);
+      return this.emit(CONSTANTS.EVENT_BOT_LOBBY_LEFT);
+    });
     this.Dota2.on("matchSignedOut", (matchId) =>
       this.emit(CONSTANTS.EVENT_MATCH_SIGNEDOUT, matchId)
     );
@@ -813,6 +828,10 @@ class DotaBot extends EventEmitter {
 
   processLobbyUpdate(oldLobby, newLobby) {
     const members = processMembers(oldLobby.members, newLobby.members);
+
+    logger.debug(
+      `processLobbyUpdate oldLobby ${util.inspect(oldLobby)} newLobby ${util.inspect(newLobby)} members ${util.inspect(members)}`
+    );
 
     for (const member of members.left) {
       logger.debug(

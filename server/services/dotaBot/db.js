@@ -33,10 +33,10 @@ module.exports.testFindAllActiveLobbies = () =>
         $in: [
           "STATE_BOT_ASSIGNED",
           "STATE_BOT_CREATED",
+          "STATE_BOT_STARTED",
           "STATE_BOT_CONNECTED",
           "STATE_WAITING_FOR_PLAYERS",
           "STATE_MATCH_IN_PROGRESS",
-          "STATE_WAITING_FOR_BOT",
         ],
       },
     })
@@ -256,7 +256,7 @@ module.exports.setAllBotsOffline = async () => {
     const result = await dotaBotModel.updateMany(
       {
         status: {
-          $ne: CONSTANTS.BOT_OFFLINE,
+          $nin: [CONSTANTS.BOT_OFFLINE,CONSTANTS.DELETED],
         },
       },
       {
@@ -328,6 +328,7 @@ module.exports.findAllActiveLobbies = async () => {
             CONSTANTS.STATE_COMPLETED_NO_STATS,
             CONSTANTS.STATE_KILLED,
             CONSTANTS.STATE_FAILED,
+            CONSTANTS.DELETED,
           ],
         },
       })
@@ -351,6 +352,7 @@ module.exports.findActiveLobbiesForUser = async (userId) => {
             CONSTANTS.STATE_COMPLETED_NO_STATS,
             CONSTANTS.STATE_KILLED,
             CONSTANTS.STATE_FAILED,
+            CONSTANTS.DELETED,
           ],
         },
         players: userId,

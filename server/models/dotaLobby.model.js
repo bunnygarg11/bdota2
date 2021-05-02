@@ -1,4 +1,6 @@
 let mongoose = require("mongoose");
+const mongooseHistory = require("mongoose-history");
+
 let Schema = mongoose.Schema;
 
 let dotalobby = new Schema({
@@ -105,5 +107,6 @@ let dotalobby = new Schema({
   updatedOn: { type: Date, default: Date.now },
 });
 
+// dotalobby.plugin(mongooseHistory);
 
 module.exports = mongoose.model("dotalobby", dotalobby);

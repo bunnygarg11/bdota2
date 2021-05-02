@@ -114,7 +114,7 @@ const validateLobbyPlayers = async (_lobbyState) => {
 
 const assignLobbyName = async (lobbyState) => {
   let lobbyName = templateString("Inhouse Lobby ${lobbyId}")({
-    lobbyId: lobbyState._id,
+    lobbyId: lobbyState._id.toString(),
   });
   lobbyName = lobbyName
     .toLowerCase()

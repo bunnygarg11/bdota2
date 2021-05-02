@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const CONSTANTS=require("../services/dotaBot").CONSTANTS
+const mongooseHistory = require("mongoose-history");
 const Schema = mongoose.Schema;
 
 const dotaBotSchema = new Schema(
@@ -51,5 +51,7 @@ const dotaBotSchema = new Schema(
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
   }
 );
+
+// dotaBotSchema.plugin(mongooseHistory);
 
 module.exports = mongoose.model("dotabot", dotaBotSchema);

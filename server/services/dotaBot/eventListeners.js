@@ -123,6 +123,11 @@ const EventListeners = ({ Db }) => ({
   async [CONSTANTS.EVENT_SELECTION_SIDE](lobbyState, captain, side) {
     return this.queueEvent(this.onSelectionSide, [lobbyState, captain, side]);
   },
+  async [CONSTANTS.EVENT_DISABLE_MATCH_TRACKER]() {
+    return this.queueEvent(this.disableMatchTracker);
+  }
+
+  
 });
 
 module.exports = EventListeners;

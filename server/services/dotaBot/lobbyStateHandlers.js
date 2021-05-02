@@ -254,7 +254,10 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
       if (bot) {
         logger.debug(`lobby run findUnassignedBot ${bot.steamId64}`);
         lobbyState.state = CONSTANTS.STATE_BOT_ASSIGNED;
-        lobbyState = await Lobby.assignBotToLobby(lobbyState,bot._id);
+        lobbyState = await Lobby.assignBotToLobby(
+          lobbyState,
+          bot._id.toString()
+        );
       }
     } else {
       lobbyState.state = CONSTANTS.STATE_BOT_ASSIGNED;
