@@ -91,7 +91,7 @@ const setMatchDetails = async (lobbyOrState) => {
   logger.debug(`matchTracker setMatchDetails matchId ${lobbyOrState.matchId}`);
   let lobby = await Lobby.getLobby(lobbyOrState);
   logger.debug(
-    `matchTracker setMatchDetails lobby.id ${lobby.id} ${lobby.matchId}`
+    `matchTracker setMatchDetails lobby.id ${lobby._id.toString()} ${lobby.matchId}`
   );
   if (!lobby.odotaData) {
     const odotaData = await getOpenDotaMatchDetails(lobby.matchId);
@@ -298,7 +298,7 @@ class MatchTracker extends EventEmitter {
       const data = this.lobbies.shift();
       if (!data.lastCheck || data.lastCheck < Date.now() - this.interval) {
         data.lastCheck = Date.now();
-        const lobby = await setMatchDetails(data);
+        const lobby = await setMatchDetails(data.lobby);
         if (lobby.odotaData) {
           await setMatchPlayerDetails(lobby);
           this.emit(CONSTANTS.EVENT_MATCH_STATS, lobby);
@@ -306,7 +306,7 @@ class MatchTracker extends EventEmitter {
           lobby.state === CONSTANTS.STATE_MATCH_IN_PROGRESS ||
           lobby.state === CONSTANTS.STATE_MATCH_ENDED
         ) {
-          logger.debug(`matchTracker no data, queueing ${lobby.id}`);
+          logger.debug(`matchTracker no data, queueing ${lobby._id}`);
           // startedAtExpiration is four hours before the current time
           // any match started before that is considered expired
           const startedAtExpiration = new Date();

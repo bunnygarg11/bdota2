@@ -521,9 +521,7 @@ class LobbyManager extends EventEmitter {
 
   getBot(botId) {
     logger.debug(
-      `LobbyManager getBot ${botId} bot ${
-        botId != null ? util.inspect(this.bots[botId]) : null
-      }`
+      `LobbyManager getBot ${botId} `
     );
     return botId != null ? this.bots[botId] : null;
   }

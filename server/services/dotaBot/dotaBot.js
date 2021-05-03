@@ -23,6 +23,7 @@ const validBotLobbyStates = [
   CONSTANTS.STATE_BOT_ASSIGNED,
   CONSTANTS.STATE_BOT_STARTED,
   CONSTANTS.STATE_WAITING_FOR_PLAYERS,
+  CONSTANTS.STATE_MATCH_IN_PROGRESS
 ];
 
 const slotToTeam = (slot) => {
@@ -62,19 +63,30 @@ const isDotaLobbyReady = (teamCache, playerState) => {
   // }
   // return true;
 
+  // for (let e of teamCache) {
+  //   if (Object.keys(playerState).indexOf(e) == -1) {
+  //     return false;
+  //   }
+  // }
+
   logger.debug(
     `dotaBot isDotaLobbyReady teamCache ${util.inspect(
       teamCache
     )} playerState ${util.inspect(playerState)} `
   );
 
-  if (
-    !teamCache.length ||
-    !Object.keys(playerState).length ||
-    teamCache.length != Object.keys(playerState).length
-  )
-    return false;
-  return true;
+  if (teamCache.length && Object.keys(playerState).length) {
+    for (let e of teamCache) {
+      if (Object.keys(playerState).indexOf(e) == -1) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return false;
+  // return true;
 };
 
 const connectToSteam = async (steamClient) =>
@@ -135,7 +147,7 @@ const defaultLobbyOptions = {
   game_name: Date.now().toString(),
   server_region: Dota2.ServerRegion.SINGAPORE,
   game_mode: Dota2.schema.DOTA_GameMode.DOTA_GAMEMODE_1V1MID,
-  series_type: Dota2.SeriesType.NONE,
+  series_type: Dota2.SeriesType.BEST_OF_THREE,
   game_version: 1,
   allow_cheats: false,
   fill_with_bots: false,
@@ -171,9 +183,13 @@ const intersectMembers = (membersA = [], membersB = []) =>
 const membersToPlayerState = (members) => {
   const playerState = {};
   for (const member of members) {
-    playerState[member.id.toString()] = slotToTeam(member.team);
+    if (member.slot) playerState[member.id.toString()] = member.slot;
   }
-  logger.debug(`membersToPlayerState playerState ${util.inspect(playerState)}`);
+  logger.debug(
+    `membersToPlayerState playerState ${util.inspect(
+      playerState
+    )} members ${util.inspect(members)} `
+  );
   return playerState;
 };
 
@@ -184,11 +200,7 @@ const processMembers = (oldMembers = [], newMembers = []) => {
     changedSlot: [],
   };
 
-  logger.debug(
-    `dotabot processMembers oldMembers ${util.inspect(
-      oldMembers
-    )} newMembers${util.inspect(newMembers)} members ${util.inspect(members)} `
-  );
+  logger.debug(`dotabot processMembers  `);
 
   // for (const oldMember of oldMembers) {
   //   const newMember = newMembers.find(
@@ -422,7 +434,9 @@ class DotaBot extends EventEmitter {
       logger.debug(
         `DotaBot practiceLobbyUpdate this.lobby  ${util.inspect(
           this.lobby
-        )}  lobby ${util.inspect(lobby)}  this.teamCache ${util.inspect(this.teamCache)} `
+        )}  lobby--> ${util.inspect(lobby)}  this.teamCache ${util.inspect(
+          this.teamCache
+        )} `
       );
       if (this.lobby) this.processLobbyUpdate(this.lobby, lobby);
       if (
@@ -435,7 +449,7 @@ class DotaBot extends EventEmitter {
           CONSTANTS.EVENT_MATCH_OUTCOME,
           lobby.lobby_id,
           lobby.match_outcome,
-          lobby.members
+          lobby.all_members
         );
       }
 
@@ -464,6 +478,12 @@ class DotaBot extends EventEmitter {
             } invalid. Bot ${this.config._id || "id"} leaving lobby...`
           );
         } else {
+          // if (
+          //   lobbyState.state == CONSTANTS.STATE_WAITING_FOR_PLAYERS &&
+          //   this.lobby
+          // ) {
+          //   this.processLobbyUpdate(this.lobby, lobby);
+          // }
           return null;
         }
         return this.leavePracticeLobby()
@@ -585,7 +605,7 @@ class DotaBot extends EventEmitter {
    * */
   get playerState() {
     return this.Dota2.Lobby
-      ? membersToPlayerState(this.Dota2.Lobby.members)
+      ? membersToPlayerState(this.Dota2.Lobby.all_members)
       : {};
   }
 
@@ -827,10 +847,18 @@ class DotaBot extends EventEmitter {
   }
 
   processLobbyUpdate(oldLobby, newLobby) {
-    const members = processMembers(oldLobby.members, newLobby.members);
+    const members = processMembers(oldLobby.all_members, newLobby.all_members);
 
     logger.debug(
-      `processLobbyUpdate oldLobby ${util.inspect(oldLobby)} newLobby ${util.inspect(newLobby)} members ${util.inspect(members)}`
+      `processLobbyUpdate oldLobby.all_members ${util.inspect(
+        oldLobby.all_members
+      )}pending_invites ${
+        newLobby &&
+        newLobby.pending_invites[0] &&
+        newLobby.pending_invites[0].toString()
+      } newLobby.all_members ${util.inspect(
+        newLobby.all_members
+      )} members ${util.inspect(members)}`
     );
 
     for (const member of members.left) {
@@ -876,7 +904,10 @@ class DotaBot extends EventEmitter {
     // }
 
     if (
-      isDotaLobbyReady(this.teamCache, membersToPlayerState(newLobby.members))
+      isDotaLobbyReady(
+        this.teamCache,
+        membersToPlayerState(newLobby.all_members)
+      )
     ) {
       logger.debug("DotaBot processLobbyUpdate lobby ready");
       this.emit(CONSTANTS.EVENT_LOBBY_READY);

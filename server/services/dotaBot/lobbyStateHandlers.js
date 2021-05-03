@@ -4,7 +4,7 @@ const Fp = require("./util/fp");
 const equalsLong = require("./util/equalsLong");
 const getRandomInt = require("./util/getRandomInt");
 // const SnowflakeUtil = require("discord.js/src/util/Snowflake");
-const util=require("util")
+const util = require("util");
 
 const LobbyStateTransitions = {
   [CONSTANTS.STATE_CHECKING_READY]: {
@@ -21,7 +21,7 @@ const lobbyStateNoOp = async (_lobbyState) => ({ ..._lobbyState });
  * @mixin
  * @memberof module:ihlManager
  */
-const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
+const LobbyStateHandlers = ({ DotaBot, Db, Lobby, MatchTracker }) => ({
   async [CONSTANTS.STATE_NEW](_lobbyState) {
     await Db.updateLobbyState(_lobbyState)(CONSTANTS.STATE_WAITING_FOR_QUEUE);
     return { ..._lobbyState, state: CONSTANTS.STATE_WAITING_FOR_QUEUE };
@@ -104,7 +104,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
           }
           return Fp.allPromise([
             Lobby.removeUserFromQueues(player),
-            Lobby.removePlayer(lobbyState,player),
+            Lobby.removePlayer(lobbyState, player),
           ]);
         })
       );
@@ -237,18 +237,18 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
     if (lobbyState.botId == null) {
       // const bot = await Db.findUnassignedBot(lobbyState.inhouseState);
       let bot = await Db.findUnassignedBot();
-      if(!bot){
-        let steamId64=process.env.steamId64
-         let accountName=process.env.accountName
-         let personaName=process.env.personaName
-         let password=process.env.password
+      if (!bot) {
+        let steamId64 = process.env.steamId64;
+        let accountName = process.env.accountName;
+        let personaName = process.env.personaName;
+        let password = process.env.password;
         //  let steam_guard_code=process.env.steam_guard_code
         bot = await Db.findOrCreateBot(
           steamId64,
           accountName,
           personaName,
-          password,
-        ); 
+          password
+        );
       }
 
       if (bot) {
@@ -318,9 +318,13 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
           lobbyState.state = CONSTANTS.STATE_WAITING_FOR_BOT;
           lobbyState = await Lobby.unassignBotFromLobby(lobbyState);
           await Db.updateBotStatusBySteamId(
-            CONSTANTS.BOT_IN_LOBBY,
+            CONSTANTS.BOT_IDLE,
             dotaBot.steamId64
           );
+          await dotaBot.leavePracticeLobby();
+          await dotaBot.abandonCurrentGame();
+          await dotaBot.leaveLobbyChat();
+
           // this[CONSTANTS.MSG_BOT_UNASSIGNED](lobbyState, "In another lobby.");
         }
       }
@@ -346,7 +350,7 @@ const LobbyStateHandlers = ({ DotaBot, Db,  Lobby, MatchTracker }) => ({
     //   {}
     // );
 
-    dotaBot.teamCache = players
+    dotaBot.teamCache = players;
     // await Lobby.mapPlayers(DotaBot.invitePlayer(dotaBot))(lobbyState);
     lobbyState.players.map(async (e) => await DotaBot.invitePlayer(dotaBot)(e));
     lobbyState.state = CONSTANTS.STATE_WAITING_FOR_PLAYERS;
