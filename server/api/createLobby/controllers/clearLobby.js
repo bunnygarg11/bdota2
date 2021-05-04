@@ -10,9 +10,11 @@ const dotaLobbyPlayerModel = require("../../../models/dotaLobbyPlayer.model");
 
 const _clearLobby = async (req, res, next) => {
   try {
+    await lobbyManager[CONSTANTS.EVENT_DISABLE_MATCH_TRACKER]();
     let flag = Object.keys(lobbyManager.bots);
 
     let lobbyState = await Db.testFindAllActiveLobbies();
+    let lobbyStateIds = lobbyState.map((e) => e._id.toString());
 
     // lobbyState.forEach(async (e) => {
     //   await lobbyManager[CONSTANTS.EVENT_LOBBY_LEAVE](lobbyState);
@@ -31,14 +33,24 @@ const _clearLobby = async (req, res, next) => {
       for (let e of flag) {
         await lobbyManager.removeBot(e);
       }
+
+      await dotaBotModel
+        .updateMany({ _id: { $in: flag } }, { status: CONSTANTS.DELETED })
+        .exec();
     }
 
     // Object.keys(lobbyManager.bots).forEach(async (e) => {
     //   await lobbyManager.removeBot(e);
     // });
 
-    await dotaLobbyModel.updateMany({}, { state: CONSTANTS.DELETED }).exec();
-    await dotaBotModel.updateMany({}, { status: CONSTANTS.DELETED }).exec();
+    if (lobbyStateIds.length) {
+      await dotaLobbyModel
+        .updateMany(
+          { _id: { $in: lobbyStateIds } },
+          { state: CONSTANTS.DELETED }
+        )
+        .exec();
+    }
 
     return Services._response(
       res,

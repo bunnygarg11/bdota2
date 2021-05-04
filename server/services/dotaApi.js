@@ -16,16 +16,16 @@ process.env.REACT_APP_IMAGE_CDN =
 const baseconfig = {
   baseURL: "https://api.opendota.com/api/",
   timeout: 5000,
-  headers: {
-    "Accept-Encoding": "gzip",
-  },
+  // headers: {
+  //   "Accept-Encoding": "gzip",
+  // },
 };
 
 if (dotaApiKeyavailable) {
   baseconfig.headers = {
     Accept: "application/json",
     "Content-Type": "application/json",
-    "Accept-Encoding": "gzip",
+    // "Accept-Encoding": "gzip",
     Authorization: `Bearer ${dotaApiKey}`,
   };
 }

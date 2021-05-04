@@ -292,9 +292,9 @@ class LobbyManager extends EventEmitter {
       if (!this.matchTracker.enabled) this.matchTracker.enable();
       this.matchTracker.run();
       // this[CONSTANTS.MSG_LOBBY_STARTED](lobbyState);
-      logger.debug("ihlManager onStartDotaLobby true");
+      logger.debug("LobbyManager onStartDotaLobby true");
     }
-    logger.debug("ihlManager onStartDotaLobby false");
+    logger.debug("LobbyManager onStartDotaLobby false");
     return lobbyState;
   }
 

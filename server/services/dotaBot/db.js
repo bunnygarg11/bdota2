@@ -100,6 +100,7 @@ module.exports.updateBotStatusBySteamId = async (status, steamId64) => {
       .findOneAndUpdate(
         {
           steamId64,
+          status:{$ne:CONSTANTS.DELETED}
         },
         {
           status,
@@ -128,6 +129,7 @@ module.exports.updateBotStatus = async (status, _id) => {
       .findOneAndUpdate(
         {
           _id,
+          status: { $ne: CONSTANTS.DELETED },
         },
         {
           status,
@@ -155,6 +157,7 @@ module.exports.findBot = async (_id) => {
     const result = await dotaBotModel
       .findOne({
         _id,
+        status: { $ne: CONSTANTS.DELETED },
       })
       .lean(true)
       .exec();
@@ -171,6 +174,7 @@ module.exports.findBotBySteamId64 = async (steamId64) => {
     const result = await dotaBotModel
       .findOne({
         steamId64,
+        status: { $ne: CONSTANTS.DELETED },
       })
       .lean(true)
       .exec();
@@ -213,6 +217,7 @@ module.exports.assignBotToLobby = async (lobby, botId) => {
       .findOneAndUpdate(
         {
           _id: lobby._id,
+          state: { $ne: CONSTANTS.DELETED },
         },
         {
           botId,
@@ -227,6 +232,7 @@ module.exports.assignBotToLobby = async (lobby, botId) => {
       .findOneAndUpdate(
         {
           _id: botId,
+          status: { $ne: CONSTANTS.DELETED },
         },
         {
           $inc: {
@@ -241,6 +247,54 @@ module.exports.assignBotToLobby = async (lobby, botId) => {
       .exec();
     logger.debug(
       `DB assignBotToLobby lobby ${lobby} botId ${botId}  --> ${util.inspect(
+        result
+      )}`
+    );
+    return result;
+  } catch (err) {
+    logger.error(err);
+    throw err.message;
+  }
+};
+
+module.exports.unassignBotFromLobby = async (lobby, botId) => {
+  try {
+    await dotaLobbyModel
+      .findOneAndUpdate(
+        {
+          _id: lobby._id,
+          state: { $ne: CONSTANTS.DELETED },
+        },
+        {
+          botId: null,
+          dotaLobbyId: null,
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+
+    const result = await dotaBotModel
+      .findOneAndUpdate(
+        {
+          status: { $ne: CONSTANTS.DELETED },
+          _id: botId,
+        },
+        {
+          $inc: {
+            lobbyCount: -1,
+          },
+        },
+        {
+          new: true,
+        }
+      )
+      .lean(true)
+      .exec();
+    logger.debug(
+      `DB unassignBotFromLobby lobby ${lobby} botId ${botId}  --> ${util.inspect(
         result
       )}`
     );
@@ -276,6 +330,7 @@ module.exports.updateBot = async (steamId64, values) => {
     const result = await dotaBotModel
       .findOneAndUpdate(
         {
+          status: { $ne: CONSTANTS.DELETED },
           steamId64,
         },
         values,
@@ -301,6 +356,7 @@ module.exports.destroyBotBySteamID64 = async (steamId64) => {
   try {
     const result = await dotaBotModel.findOneAndDelete({
       steamId64,
+      status: { $ne: CONSTANTS.DELETED },
     });
     logger.debug(
       `DB destroyBotBySteamID64  steamId64 ${steamId64}  --> ${util.inspect(
@@ -408,6 +464,7 @@ module.exports.findLobbyByName = async (lobbyName) => {
     const result = await dotaLobbyModel
       .findOne({
         lobbyName,
+        state: { $ne: CONSTANTS.DELETED },
       })
       .lean(true)
       .exec();
@@ -426,6 +483,7 @@ module.exports.findLobbyByMatchId = async (matchId) => {
     const result = await dotaLobbyModel
       .findOne({
         matchId,
+        state: { $ne: CONSTANTS.DELETED },
       })
       .lean(true)
       .exec();
@@ -460,6 +518,7 @@ module.exports.findLobbyByDotaLobbyId = async (dotaLobbyId) => {
     const result = await dotaLobbyModel
       .findOne({
         dotaLobbyId,
+        state: { $ne: CONSTANTS.DELETED },
       })
       .lean(true)
       .exec();
@@ -480,6 +539,7 @@ module.exports.findLobbyById = async (_id) => {
     const result = await dotaLobbyModel
       .findOne({
         _id,
+        state: { $ne: CONSTANTS.DELETED },
       })
       .lean(true)
       .exec();
@@ -491,51 +551,7 @@ module.exports.findLobbyById = async (_id) => {
   }
 };
 
-module.exports.unassignBotFromLobby = async (lobby, botId) => {
-  try {
-    await dotaLobbyModel
-      .findOneAndUpdate(
-        {
-          _id: lobby._id,
-        },
-        {
-          botId: null,
-          dotaLobbyId: null,
-        },
-        {
-          new: true,
-        }
-      )
-      .lean(true)
-      .exec();
 
-    const result = await dotaBotModel
-      .findOneAndUpdate(
-        {
-          _id: botId,
-        },
-        {
-          $inc: {
-            lobbyCount: -1,
-          },
-        },
-        {
-          new: true,
-        }
-      )
-      .lean(true)
-      .exec();
-    logger.debug(
-      `DB unassignBotFromLobby lobby ${lobby} botId ${botId}  --> ${util.inspect(
-        result
-      )}`
-    );
-    return result;
-  } catch (err) {
-    logger.error(err);
-    throw err.message;
-  }
-};
 
 module.exports.updateLobbyState = async (lobbyOrState, state) => {
   try {
@@ -543,6 +559,7 @@ module.exports.updateLobbyState = async (lobbyOrState, state) => {
       .findOneAndUpdate(
         {
           _id: lobbyOrState._id,
+          state: { $ne: CONSTANTS.DELETED },
         },
         {
           state,
@@ -571,6 +588,7 @@ module.exports.updateLobbyName = async (lobbyOrState, lobbyName) => {
     const result = await dotaLobbyModel
       .findOneAndUpdate(
         {
+          state: { $ne: CONSTANTS.DELETED },
           _id: lobbyOrState._id,
         },
         {
@@ -600,6 +618,7 @@ module.exports.updateLobbyChannel = async (lobbyOrState, channel) => {
       .findOneAndUpdate(
         {
           _id: lobbyOrState.id,
+          state: { $ne: CONSTANTS.DELETED },
         },
         {
           channel,
@@ -622,30 +641,6 @@ module.exports.updateLobbyChannel = async (lobbyOrState, channel) => {
   }
 };
 
-// module.exports.updateLobbyState = async (lobbyOrState, state) => {
-//   try {
-//     const result = await dotaLobbyModel
-//       .findOneAndUpdate(
-//         {
-//           _id: lobbyOrState._id,
-//         },
-//         {
-//           state,
-//         },
-//         {
-//           new: true,
-//         }
-//       )
-//       .lean(true)
-//       .exec();
-
-//     // cache.Lobbies.delete(lobbyOrState.id);
-//     return result;
-//   } catch (err) {
-//     logger.error(err);
-//     throw err.message;
-//   }
-// };
 
 module.exports.updateLobbyWinner = async (lobbyOrState, winner) => {
   try {
@@ -653,6 +648,7 @@ module.exports.updateLobbyWinner = async (lobbyOrState, winner) => {
       .findOneAndUpdate(
         {
           _id: lobbyOrState._id,
+          state: { $ne: CONSTANTS.DELETED },
         },
         {
           winner,
@@ -683,6 +679,7 @@ module.exports.updateLobby = async (lobbyOrState) => {
       .findOneAndUpdate(
         {
           _id,
+          state: { $ne: CONSTANTS.DELETED },
         },
 
         rest,
@@ -708,6 +705,7 @@ module.exports.updateLobbyFailed = async (lobbyOrState, failReason) => {
       .findOneAndUpdate(
         {
           _id: lobbyOrState._id,
+          state: { $ne: CONSTANTS.DELETED },
         },
         {
           state: CONSTANTS.STATE_FAILED,
@@ -764,6 +762,7 @@ module.exports.findAllLobbiesInState = async (state) => {
 
 module.exports.getLobbyPlayers = async (lobbyOrState, options) => {
   try {
+    if (options) options.state = options.state || { $ne: CONSTANTS.DELETED };
     let condition = options
       ? {
           _id: lobbyOrState._id,
@@ -771,6 +770,7 @@ module.exports.getLobbyPlayers = async (lobbyOrState, options) => {
         }
       : {
           _id: lobbyOrState._id,
+          state: { $ne: CONSTANTS.DELETED },
         };
     const result = await dotaLobbyModel
       .findOne(condition)
@@ -791,6 +791,7 @@ module.exports.addPlayer = async (lobbyOrState, player) => {
       .findOneAndUpdate(
         {
           _id: lobbyOrState._id,
+          state:{ $ne: CONSTANTS.DELETED }
         },
         {
           $push: {
@@ -817,6 +818,7 @@ module.exports.removePlayer = async (lobbyOrState, player) => {
       .findOneAndUpdate(
         {
           _id: lobbyOrState._id,
+          state: { $ne: CONSTANTS.DELETED },
         },
         {
           $pull: {
@@ -838,6 +840,14 @@ module.exports.removePlayer = async (lobbyOrState, player) => {
     throw err.message;
   }
 };
+
+
+
+
+
+//**********************************************************LOBBYPLAYER MODEL***************************************************************************************************************************** */
+//**********************************************************LOBBYPLAYER MODEL***************************************************************************************************************************** */
+//**********************************************************LOBBYPLAYER MODEL***************************************************************************************************************************** */
 
 module.exports.findOrCreateLobbyPlayer = async (lobbyPlayer) => {
   try {
